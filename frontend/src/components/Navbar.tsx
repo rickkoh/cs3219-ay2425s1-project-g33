@@ -3,18 +3,28 @@ import { Input } from "@/components/ui/input";
 import { Flame, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
+import React from "react";
 
-export default function Navbar() {
+interface NavbarProps {
+  isMinimal?: boolean;
+  className?: string;
+}
+
+export default function Navbar({ isMinimal = false, className }: NavbarProps) {
   const links: NavLinkProps[] = [{ label: "Dashboard", href: "/dashboard" }];
 
   return (
-    <header className="sticky top-0 z-10 py-2 border-b bg-background">
+    <header className={`sticky top-0 z-10 py-2 border-b bg-background ${className}`}>
       <nav className="container flex items-center gap-5 mx-auto h-10">
         {/* leave like this for now maybe use an svg icon later on */}
         <NavLogo />
-        <NavLinks links={links} />
-        <NavSearchBar />
-        <NavUserDetails />
+        {!isMinimal && (
+          <>
+            <NavLinks links={links} />
+            <NavSearchBar />
+            <NavUserDetails />
+          </>
+        )}
       </nav>
     </header>
   );
