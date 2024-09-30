@@ -4,6 +4,7 @@ import { Flame, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 import React from "react";
+import { twMerge } from "tailwind-merge";
 
 interface NavbarProps {
   isMinimal?: boolean;
@@ -14,8 +15,13 @@ export default function Navbar({ isMinimal = false, className }: NavbarProps) {
   const links: NavLinkProps[] = [{ label: "Dashboard", href: "/dashboard" }];
 
   return (
-    <header className={`sticky top-0 z-10 py-2 border-b bg-background ${className}`}>
-      <nav className="container flex items-center gap-5 mx-auto h-10">
+    <header
+      className={twMerge(
+        `sticky top-0 z-10 py-2 border-b bg-background`,
+        className
+      )}
+    >
+      <nav className="container flex items-center h-10 gap-5 mx-auto">
         {/* leave like this for now maybe use an svg icon later on */}
         <NavLogo />
         {!isMinimal && (
