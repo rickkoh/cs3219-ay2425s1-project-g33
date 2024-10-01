@@ -3,7 +3,7 @@ import { Separator } from "@radix-ui/react-dropdown-menu";
 import React from "react";
 
 interface Activatable {
-    isActive: boolean;
+  isActive: boolean;
 }
 
 interface StepperComponentProps {
@@ -20,7 +20,9 @@ export default function StepperComponent({
       {Array.from({ length: totalSteps }, (e, i) => (
         <>
           <StepComponent isActive={i + 1 <= currStep} value={i + 1} key={i} />
-          {i < totalSteps - 1 && <SeparatorComponent isActive={(i + 1) < currStep}/>}
+          {i < totalSteps - 1 && (
+            <SeparatorComponent isActive={i + 1 < currStep} />
+          )}
         </>
       ))}
     </div>
@@ -44,8 +46,18 @@ function StepComponent({ isActive, value }: StepComponentProps) {
   );
 }
 
-interface SeparatorComponentProps extends Activatable {}
+interface SeparatorComponentProps extends Activatable {
+  key?: number;
+}
 
-function SeparatorComponent({ isActive }: SeparatorComponentProps) {
-    return  <Separator className={cn("flex-1 h-[2px]", {"bg-primary": isActive,"bg-background-100": !isActive})} />
+function SeparatorComponent({ key, isActive }: SeparatorComponentProps) {
+  return (
+    <Separator
+      key={key}
+      className={cn("flex-1 h-[2px]", {
+        "bg-primary": isActive,
+        "bg-background-100": !isActive,
+      })}
+    />
+  );
 }
