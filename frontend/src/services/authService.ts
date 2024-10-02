@@ -5,10 +5,12 @@ import { cookies } from "next/headers";
 import {
   AccessTokenResponse,
   AccessTokenResponseSchema,
+  RefreshTokenSchema,
   TokenPairResponseSchema,
 } from "@/types/Token";
 import { LoginCredentials, SignupData } from "@/types/AuthCredentials";
 import { LogoutResponse, LogoutResposeSchema } from "@/types/AuthResponses";
+import { getAccessToken } from "@/lib/auth";
 
 export async function login(
   credientials: LoginCredentials
@@ -28,17 +30,17 @@ export async function login(
 
     const resObj = await res.json();
 
-    const authTokenResponse = TokenPairResponseSchema.parse(resObj);
+    const tokenPairResponse = TokenPairResponseSchema.parse(resObj);
     const accessTokenResponse = AccessTokenResponseSchema.parse(resObj);
 
-    if (authTokenResponse.data) {
+    if (tokenPairResponse.data) {
       const cookieStore = cookies();
-      cookieStore.set("access_token", authTokenResponse.data.access_token, {
+      cookieStore.set("access_token", tokenPairResponse.data.access_token, {
         httpOnly: true,
         // secure: true, // Uncomment this line when using HTTPS
         sameSite: "strict",
       });
-      cookieStore.set("refresh_token", authTokenResponse.data.refresh_token, {
+      cookieStore.set("refresh_token", tokenPairResponse.data.refresh_token, {
         maxAge: 60 * 60 * 24 * 7, // 7 days
         httpOnly: true,
         // secure: true, // Uncomment this line when using HTTPS
@@ -73,17 +75,17 @@ export async function signup(
 
     const resObj = await res.json();
 
-    const authTokenResponse = TokenPairResponseSchema.parse(resObj);
+    const tokenPairResponse = TokenPairResponseSchema.parse(resObj);
     const accessTokenResponse = AccessTokenResponseSchema.parse(resObj);
 
-    if (authTokenResponse.data) {
+    if (tokenPairResponse.data) {
       const cookieStore = cookies();
-      cookieStore.set("access_token", authTokenResponse.data.access_token, {
+      cookieStore.set("access_token", tokenPairResponse.data.access_token, {
         httpOnly: true,
         // secure: true, // Uncomment this line when using HTTPS
         sameSite: "strict",
       });
-      cookieStore.set("refresh_token", authTokenResponse.data.refresh_token, {
+      cookieStore.set("refresh_token", tokenPairResponse.data.refresh_token, {
         maxAge: 60 * 60 * 24 * 7, // 7 days
         httpOnly: true,
         // secure: true, // Uncomment this line when using HTTPS
@@ -102,7 +104,7 @@ export async function signup(
 
 export async function logout(): Promise<LogoutResponse> {
   try {
-    const access_token = cookies().get("access_token");
+    const access_token = getAccessToken();
 
     const res: Response = await fetch(
       process.env.PUBLIC_API_URL + `/api/auth/logout`,
@@ -123,6 +125,54 @@ export async function logout(): Promise<LogoutResponse> {
     cookieStore.delete("refresh_token");
 
     return LogoutResposeSchema.parse(resObj);
+  } catch (error) {
+    return {
+      statusCode: 500,
+      message: String(error),
+    };
+  }
+}
+
+export async function refreshAccessToken(): Promise<AccessTokenResponse> {
+  try {
+    const cookieStore = cookies();
+    const refresh_token = RefreshTokenSchema.parse(
+      cookieStore.get("refresh_token")?.value
+    );
+
+    const res: Response = await fetch(
+      process.env.PUBLIC_API_URL + `/api/auth/refresh`,
+      {
+        cache: "no-cache",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${refresh_token}`,
+        },
+      }
+    );
+
+    const resObj = await res.json();
+
+    const tokenPairResponse = TokenPairResponseSchema.parse(resObj);
+    const accessTokenResponse = AccessTokenResponseSchema.parse(resObj);
+
+    if (tokenPairResponse.data) {
+      const cookieStore = cookies();
+      cookieStore.set("access_token", tokenPairResponse.data.access_token, {
+        httpOnly: true,
+        // secure: true, // Uncomment this line when using HTTPS
+        sameSite: "strict",
+      });
+      cookieStore.set("refresh_token", tokenPairResponse.data.refresh_token, {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        httpOnly: true,
+        // secure: true, // Uncomment this line when using HTTPS
+        sameSite: "strict",
+      });
+    }
+
+    return accessTokenResponse;
   } catch (error) {
     return {
       statusCode: 500,
