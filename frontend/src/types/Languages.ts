@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-const LanguagesEnum = z.enum(["Python", "Java", "C++"]);
+const LanguageEnum = z.enum(["Python", "Java", "C++"]);
 
-type Languages = z.infer<typeof LanguagesEnum>;
+type Language = z.infer<typeof LanguageEnum>;
 
-export { LanguagesEnum, type Languages };
+export { LanguageEnum, type Language };

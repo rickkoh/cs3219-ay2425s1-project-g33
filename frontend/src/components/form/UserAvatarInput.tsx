@@ -30,9 +30,21 @@ export function UserAvatarInput<TFieldValues extends FieldValues>({
           <FormLabel>{label}</FormLabel>
           <FormControl>
             <div className="flex gap-5">
-              <UserAvatar isHoverEnabled={false} src={""} name={"A"} className="w-20 h-20" />
+              <UserAvatar
+                isHoverEnabled={false}
+                src={""}
+                name={"_"}
+                className="w-20 h-20"
+              />
               <div className="flex flex-col items-start flex-1">
-                <Button variant="soft">Upload Image</Button>
+                <Button
+                  variant="soft"
+                  onClick={(e) => {
+                    e.preventDefault();
+                  }}
+                >
+                  Upload Image
+                </Button>
                 <small>
                   .png, .jpeg files up to 2MB. Recommended size is 256x256px.
                 </small>

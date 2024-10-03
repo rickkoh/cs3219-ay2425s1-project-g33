@@ -18,12 +18,12 @@ export default function StepperComponent({
   return (
     <div className="flex items-center gap-1 px-2">
       {Array.from({ length: totalSteps }, (e, i) => (
-        <>
-          <StepComponent isActive={i + 1 <= currStep} value={i + 1} key={i} />
+        <React.Fragment key={i}>
+          <StepComponent isActive={i + 1 <= currStep} value={i + 1} />
           {i < totalSteps - 1 && (
             <SeparatorComponent isActive={i + 1 < currStep} />
           )}
-        </>
+        </React.Fragment>
       ))}
     </div>
   );
@@ -46,14 +46,11 @@ function StepComponent({ isActive, value }: StepComponentProps) {
   );
 }
 
-interface SeparatorComponentProps extends Activatable {
-  key?: number;
-}
+interface SeparatorComponentProps extends Activatable {}
 
-function SeparatorComponent({ key, isActive }: SeparatorComponentProps) {
+function SeparatorComponent({ isActive }: SeparatorComponentProps) {
   return (
     <Separator
-      key={key}
       className={cn("flex-1 h-[2px]", {
         "bg-primary": isActive,
         "bg-background-100": !isActive,

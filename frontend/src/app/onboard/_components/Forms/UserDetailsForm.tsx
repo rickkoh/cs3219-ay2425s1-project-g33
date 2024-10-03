@@ -14,6 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useCallback, useContext } from "react";
+import { OnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
 
 const FormSchema = z.object({
   profilePicture: z.string(), // TODO: change to actual image file type
@@ -21,6 +23,8 @@ const FormSchema = z.object({
 });
 
 export default function UserDetailsForm() {
+  const { nextStep } = useContext(OnboardMultiStepFormContext);
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -29,10 +33,14 @@ export default function UserDetailsForm() {
     },
   });
 
+  const onSubmit = useCallback(() => {
+    nextStep();
+  }, [nextStep]);
+
   return (
     <Card className="mt-3">
       <CardHeader>
-        <CardTitle className="text-xl">Let's setup your profile</CardTitle>
+        <CardTitle className="text-xl">{`Let's setup your profile`}</CardTitle>
         <CardDescription>
           Tell us more about yourself so that we can provide you a personalised
           experience.
@@ -40,7 +48,10 @@ export default function UserDetailsForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form className="flex flex-col gap-5">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-5"
+          >
             <UserAvatarInput label="Profile Image" name="profilePicture" />
             <TextInput
               label="Display Name"
@@ -48,7 +59,9 @@ export default function UserDetailsForm() {
               placeholder={"Name"}
               className="bg-input-background-100"
             />
-            <Button className="self-center max-w-40" type="submit">Next</Button>
+            <Button className="self-end w-full max-w-40" type="submit">
+              Next
+            </Button>
           </form>
         </Form>
       </CardContent>
