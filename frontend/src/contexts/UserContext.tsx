@@ -1,3 +1,8 @@
+import {
+  AccessToken,
+  AccessTokenPayload,
+  AccessTokenPayloadSchema,
+} from "@/types/Token";
 import { UserProfile } from "@/types/User";
 import React, {
   createContext,
@@ -28,8 +33,16 @@ export function useUser() {
   return useContext(UserContext);
 }
 
-function parseJwt(token: string) {
+function parseJwt(token: AccessToken): AccessTokenPayload {
   const base64Url = token.split(".")[1];
   const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  return JSON.parse(atob(base64));
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split("")
+      .map((c) => {
+        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join("")
+  );
+  return AccessTokenPayloadSchema.parse(JSON.parse(jsonPayload));
 }
