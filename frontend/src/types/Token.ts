@@ -19,6 +19,7 @@ export const AccessTokenResponseSchema = createResponseSchema(AccessOnlySchema);
 export const AccessTokenPayloadSchema = z.object({
   sub: z.string(),
   email: z.string().email(),
+  roles: z.string().array(),
   iat: z.number(),
   exp: z.number(),
 });
