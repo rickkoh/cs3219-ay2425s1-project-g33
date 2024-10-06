@@ -12,12 +12,14 @@ interface TextInputProps<TFieldValues extends FieldValues> {
   label: string;
   name: FieldPath<TFieldValues>;
   placeholder: string;
+  className?: string;
 }
 
 export function TextInput<TFieldValues extends FieldValues>({
   label,
   name,
   placeholder,
+  className,
 }: TextInputProps<TFieldValues>) {
   const form = useFormContext();
 
@@ -29,7 +31,7 @@ export function TextInput<TFieldValues extends FieldValues>({
         <FormItem className="flex-1">
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <Input placeholder={placeholder} {...field} />
+            <Input className={className} placeholder={placeholder} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>

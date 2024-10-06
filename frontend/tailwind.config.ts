@@ -56,7 +56,12 @@ const config: Config = {
           foreground: "var(--destructive-foreground)",
         },
         border: "var(--border)",
-        input: "var(--input)",
+        input: {
+          DEFAULT: "var(--input)",
+          background: {
+            100: "var(--input-background-100)",
+          },
+        },
         ring: "var(--ring)",
         chart: {
           "1": "var(--chart-1)",

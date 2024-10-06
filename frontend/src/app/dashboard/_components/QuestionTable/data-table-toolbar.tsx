@@ -9,6 +9,7 @@ import { CreateQuestionModal } from "../Forms/CreateQuestionModal";
 import { QuestionTableContext } from "@/contexts/QuestionTableContext";
 import { useContext } from "react";
 import { useUser } from "@/contexts/UserContext";
+import { RoleEnum } from "@/types/Role";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -64,7 +65,7 @@ export default function DataTableToolbar<TData>({
             />
           </div>
           <CreateQuestionModal>
-            {user?.roles.includes("admin") && (
+            {user?.roles.includes(RoleEnum.enum.admin) && (
               <Button variant="soft">
                 <LucidePlus className="mr-2" />
                 Create question

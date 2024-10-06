@@ -91,7 +91,7 @@ export const getQuestionCategories = cache(
       );
 
       const resObj = await res.json();
-
+      
       return CategoriesResponseSchema.parse(resObj);
     } catch (error) {
       return {
