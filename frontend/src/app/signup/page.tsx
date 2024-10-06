@@ -4,36 +4,52 @@ import { useForm, SubmitHandler, FormProvider } from "react-hook-form";
 import { Card } from "@/components/ui/card";
 import { Github } from "lucide-react";
 import Link from "next/link";
-import { User, Lock, Mail } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 import {
-  Form,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
   FormField,
 } from "@/components/ui/form";
+import { z } from "zod";
+import { signup } from "@/services/authService";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-interface FormData {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export default function SignUpPage() {
-  const methods = useForm<FormData>({
-    defaultValues: {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    },
+const SignupFormSchema = z
+  .object({
+    email: z.string().email({ message: "Please enter a valid email." }).trim(),
+    password: z
+      .string()
+      .min(8, { message: "Be at least 8 characters long" })
+      .regex(/[a-zA-Z]/, { message: "Contain at least one letter." })
+      .regex(/[0-9]/, { message: "Contain at least one number." })
+      .trim(),
+    confirmPassword: z.string().trim(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match",
+    path: ["confirmPassword"],
   });
 
-  const { handleSubmit, control, formState: { errors } } = methods;
+export default function SignUpPage() {
+  const router = useRouter();
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
+  const methods = useForm<z.infer<typeof SignupFormSchema>>({
+    resolver: zodResolver(SignupFormSchema),
+    defaultValues: {},
+  });
+
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = methods;
+
+  const onSubmit: SubmitHandler<z.infer<typeof SignupFormSchema>> = async (
+    data
+  ) => {
     if (data.password !== data.confirmPassword) {
       methods.setError("confirmPassword", {
         type: "manual",
@@ -42,20 +58,15 @@ export default function SignUpPage() {
       return;
     }
 
-    try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        alert('Sign up successful!');
-      } else {
-        alert('Sign up failed.');
-      }
-    } catch (error) {
-      console.error('Error:', error);
+    const accessTokenResponse = await signup(data);
+    if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
+      localStorage.setItem(
+        "access_token",
+        accessTokenResponse.data.access_token
+      );
+      router.push("/dashboard");
+    } else {
+      // TODO: Display error message
     }
   };
 
@@ -73,29 +84,6 @@ export default function SignUpPage() {
             <FormProvider {...methods}>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex flex-col gap-y-2">
-
-                  {/* Username Field */}
-                  <FormField
-                    control={control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <User className="absolute left-2 top-1/2 transform -translate-y-1/2 text-foreground-100" />
-                            <input
-                              {...field}
-                              placeholder="Username"
-                              className="rounded-md w-full py-2 pl-10 bg-input-foreground text-input"
-                            />
-                          </div>
-                        </FormControl>
-                        {errors.username && <FormMessage>{errors.username.message}</FormMessage>}
-                      </FormItem>
-                    )}
-                  />
-
                   {/* Email Field */}
                   <FormField
                     control={control}
@@ -114,7 +102,9 @@ export default function SignUpPage() {
                             />
                           </div>
                         </FormControl>
-                        {errors.email && <FormMessage>{errors.email.message}</FormMessage>}
+                        {errors.email && (
+                          <FormMessage>{errors.email.message}</FormMessage>
+                        )}
                       </FormItem>
                     )}
                   />
@@ -137,7 +127,9 @@ export default function SignUpPage() {
                             />
                           </div>
                         </FormControl>
-                        {errors.password && <FormMessage>{errors.password.message}</FormMessage>}
+                        {errors.password && (
+                          <FormMessage>{errors.password.message}</FormMessage>
+                        )}
                       </FormItem>
                     )}
                   />
@@ -160,7 +152,11 @@ export default function SignUpPage() {
                             />
                           </div>
                         </FormControl>
-                        {errors.confirmPassword && <FormMessage>{errors.confirmPassword.message}</FormMessage>}
+                        {errors.confirmPassword && (
+                          <FormMessage>
+                            {errors.confirmPassword.message}
+                          </FormMessage>
+                        )}
                       </FormItem>
                     )}
                   />
@@ -168,7 +164,10 @@ export default function SignUpPage() {
 
                 {/* Forgot password link */}
                 <div className="text-right pt-2 pb-2">
-                  <Link href="/forgotpassword" className="hover:underline text-sm">
+                  <Link
+                    href="/forgotpassword"
+                    className="hover:underline text-sm"
+                  >
                     Forgot password?
                   </Link>
                 </div>
