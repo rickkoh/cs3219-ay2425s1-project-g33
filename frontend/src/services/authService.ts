@@ -8,7 +8,11 @@ import {
   RefreshTokenSchema,
   TokenPairResponseSchema,
 } from "@/types/Token";
-import { LoginCredentials, SignupData } from "@/types/AuthCredentials";
+import {
+  LoginCredentials,
+  SignupData,
+  SignupDataSchema,
+} from "@/types/AuthCredentials";
 import { LogoutResponse, LogoutResposeSchema } from "@/types/AuthResponses";
 import { getAccessToken } from "@/lib/auth";
 
@@ -61,6 +65,7 @@ export async function signup(
   signupData: SignupData
 ): Promise<AccessTokenResponse> {
   try {
+    const parsedSignupData = SignupDataSchema.parse(signupData);
     const res: Response = await fetch(
       process.env.PUBLIC_API_URL + `/api/auth/local/signup`,
       {
@@ -69,7 +74,7 @@ export async function signup(
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(signupData),
+        body: JSON.stringify(parsedSignupData),
       }
     );
 
