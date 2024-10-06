@@ -10,7 +10,6 @@ export const LoginCredentialsSchema = z.object({
 export const SignupDataSchema = z.object({
   email: z.string().email(),
   password: z.string(),
-  username: z.string().min(3).max(30), // Username constraints for signup
 });
 
 // Types based on the schemas

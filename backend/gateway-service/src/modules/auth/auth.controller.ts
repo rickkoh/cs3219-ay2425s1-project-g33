@@ -19,7 +19,7 @@ import {
 import { AuthDto, ResetPasswordDto, ResetPasswordRequestDto } from './dto';
 import { Token } from './interfaces';
 import { ClientProxy } from '@nestjs/microservices';
-import { first, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { RtAuthGuard } from '../../common/guards';
 import { GetCurrentUserId } from 'src/common/decorators/get-current-user-id.decorator';
 import { GetCurrentUser, Public } from 'src/common/decorators';
