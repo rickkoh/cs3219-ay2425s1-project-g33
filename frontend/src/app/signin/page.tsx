@@ -15,6 +15,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { login } from "@/services/authService";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const FormSchema = z.object({
   email: z.string(),
@@ -23,6 +24,8 @@ const FormSchema = z.object({
 
 export default function DashboardPage() {
   const router = useRouter();
+
+  const { toast } = useToast();
 
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -42,12 +45,20 @@ export default function DashboardPage() {
           "access_token",
           accessTokenResponse.data.access_token
         );
+        toast({
+          title: "Successfully Logged in!",
+          description: "You should be redirect to /dashboard",
+        });
         router.push("/dashboard");
       } else {
+        toast({
+          title: "Error!",
+          description: accessTokenResponse.message,
+        });
         // TODO: Display error message
       }
     },
-    [router]
+    [router, toast]
   );
 
   return (
