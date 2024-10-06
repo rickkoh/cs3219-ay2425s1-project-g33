@@ -2,14 +2,18 @@ import { z } from "zod";
 import { ProficiencyEnum } from "./Proficiency";
 import { LanguageEnum } from "./Languages";
 
-const UserSchema = z.object({
+const UserProfileSchema = z.object({
   username: z.string(),
   displayName: z.string(),
   email: z.string().email(),
+  roles: z.string().array(),
   proficiency: ProficiencyEnum,
   languages: z.array(LanguageEnum),
 });
 
-type User = z.infer<typeof UserSchema>;
+type UserProfile = z.infer<typeof UserProfileSchema>;
 
-export { UserSchema, type User };
+export {
+  UserProfileSchema,
+  type UserProfile,
+}
