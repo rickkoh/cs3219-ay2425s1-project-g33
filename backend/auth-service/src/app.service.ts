@@ -299,7 +299,7 @@ export class AppService {
       },
       {
         secret: process.env.JWT_SECRET,
-        expiresIn: '15m', // 15 minutes
+        expiresIn: '1h', // 1 hour
         },
       ),
       this.jwtService.signAsync(
