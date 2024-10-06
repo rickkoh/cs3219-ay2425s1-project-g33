@@ -4,9 +4,8 @@ import { useForm, SubmitHandler, FormProvider } from "react-hook-form";
 import { Card } from "@/components/ui/card";
 import { Github } from "lucide-react";
 import Link from "next/link";
-import { User, Lock, Mail } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 import {
-  Form,
   FormItem,
   FormLabel,
   FormControl,
@@ -20,10 +19,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const SignupFormSchema = z
   .object({
-    username: z
-      .string()
-      .min(2, { message: "Name must be at least 2 characters long." })
-      .trim(),
     email: z.string().email({ message: "Please enter a valid email." }).trim(),
     password: z
       .string()
@@ -89,30 +84,6 @@ export default function SignUpPage() {
             <FormProvider {...methods}>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex flex-col gap-y-2">
-                  {/* Username Field */}
-                  <FormField
-                    control={control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <User className="absolute left-2 top-1/2 transform -translate-y-1/2 text-foreground-100" />
-                            <input
-                              {...field}
-                              placeholder="Username"
-                              className="rounded-md w-full py-2 pl-10 bg-input-foreground text-input"
-                            />
-                          </div>
-                        </FormControl>
-                        {errors.username && (
-                          <FormMessage>{errors.username.message}</FormMessage>
-                        )}
-                      </FormItem>
-                    )}
-                  />
-
                   {/* Email Field */}
                   <FormField
                     control={control}
