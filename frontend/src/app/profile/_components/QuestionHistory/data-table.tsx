@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { DataTablePagination } from "./data-table-pagination";
 
@@ -29,7 +29,6 @@ import DataTableToolbar from "./data-table-toolbar";
 
 import { Card } from "@/components/ui/card";
 import { QuestionTableProvider } from "@/contexts/QuestionTableContext";
-import { useUser } from "@/contexts/UserContext";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -41,22 +40,12 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const user = useUser();
-
-  const isAdmin = useMemo(() => {
-    return user?.roles.includes("admin");
-  }, [user]);
-
-  const filteredColumns = isAdmin
-    ? columns
-    : columns.filter((column) => column.id !== "Action");
-
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
     data,
-    columns: filteredColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,

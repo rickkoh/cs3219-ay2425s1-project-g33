@@ -72,6 +72,7 @@
     --destructive-foreground: #f7f9fb;
     --border: #2b3545;
     --input: #262626;
+    --input-background-100: #404040;
     --input-foreground: #f3f4f6;
     --input-foreground-100: #9ca3af;
     --input: #262626;
@@ -117,6 +118,7 @@
     --destructive-foreground: #f7f9fb;
     --border: #2b3545;
     --input: #262626;
+    --input-background-100: #404040;
     --input-foreground: #f3f4f6;
     --input-foreground-100: #9ca3af;
     --ring: #6f8ca4;
