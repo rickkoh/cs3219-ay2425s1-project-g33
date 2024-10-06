@@ -41,6 +41,7 @@ export function UserAvatarInput<TFieldValues extends FieldValues>({
                   variant="soft"
                   onClick={(e) => {
                     e.preventDefault();
+                    alert("Coming Soon :)");
                   }}
                 >
                   Upload Image

@@ -1,5 +1,3 @@
-"use server";
-
 import { cookies } from "next/headers";
 import {
   AccessToken,
@@ -17,6 +15,7 @@ import { refreshAccessToken } from "@/services/authService";
  * @returns {Promise<AccessToken>}
  */
 export async function getAccessToken(): Promise<AccessToken> {
+  "use server";
   const cookieStore = cookies();
   const access_token = AccessTokenSchema.parse(
     cookieStore.get("access_token")?.value
@@ -38,7 +37,7 @@ function isTokenExpired(token: AccessToken): boolean {
   return decoded.exp < currentTime;
 }
 
-function parseJwt(token: AccessToken): AccessTokenPayload {
+export function parseJwt(token: AccessToken): AccessTokenPayload {
   const base64Url = token.split(".")[1];
   const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
   const jsonPayload = decodeURIComponent(
