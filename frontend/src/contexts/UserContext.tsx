@@ -5,7 +5,6 @@ import {
   AccessTokenPayload,
   AccessTokenPayloadSchema,
 } from "@/types/Token";
-import { UserProfile } from "@/types/User";
 import React, {
   createContext,
   useContext,
@@ -14,11 +13,11 @@ import React, {
   PropsWithChildren,
 } from "react";
 
-const UserContext = createContext<UserProfile | undefined>(undefined);
+const UserContext = createContext<AccessTokenPayload | undefined>(undefined);
 
 export function UserProvider({ children }: PropsWithChildren) {
   // TODO: Once User Service is implemented on the backend, fetch user profile
-  const [user, setUser] = useState<UserProfile>();
+  const [user, setUser] = useState<AccessTokenPayload>();
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
