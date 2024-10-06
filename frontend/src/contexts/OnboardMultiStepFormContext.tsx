@@ -1,19 +1,19 @@
 "use client";
 
-import { User } from "@/types/User";
-import { createContext, useCallback, useState } from "react";
+import { UserProfile } from "@/types/User";
+import { createContext, useCallback, useContext, useState } from "react";
 
 interface OnboardMultiStepFormContextType {
-  user: User | null;
+  userProfile: UserProfile | null;
   totalSteps: number;
   currStep: number;
   nextStep: () => void;
   prevStep: () => void;
-  updateUser: (val: User) => void;
+  updateUser: (val: UserProfile) => void;
 }
 
 const defaultValues: OnboardMultiStepFormContextType = {
-  user: null,
+  userProfile: null,
   totalSteps: 3,
   currStep: 1,
   nextStep: () => {},
@@ -24,13 +24,17 @@ const defaultValues: OnboardMultiStepFormContextType = {
 export const OnboardMultiStepFormContext =
   createContext<OnboardMultiStepFormContextType>(defaultValues);
 
+export function useOnboardMultiStepFormContext() {
+  return useContext(OnboardMultiStepFormContext);
+}
+
 export function OnboardMultiStepFormProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [currStep, setCurrStep] = useState<number>(defaultValues.currStep);
-  const [user, setUser] = useState<User | null>(defaultValues.user);
+  const [userProfile, setUser] = useState<UserProfile | null>(defaultValues.userProfile);
 
   const nextStep = useCallback(() => {
     setCurrStep((prevCurrStep) =>
@@ -42,7 +46,7 @@ export function OnboardMultiStepFormProvider({
     setCurrStep((prevCurrStep) => Math.max(prevCurrStep - 1, 1));
   }, []);
 
-  const updateUser = useCallback((updatedUser: User) => {
+  const updateUser = useCallback((updatedUser: UserProfile) => {
     setUser((prevUser) => ({
       ...prevUser,
       ...updatedUser,
@@ -52,7 +56,7 @@ export function OnboardMultiStepFormProvider({
   return (
     <OnboardMultiStepFormContext.Provider
       value={{
-        user,
+        userProfile,
         totalSteps: defaultValues.totalSteps,
         currStep,
         nextStep,
