@@ -1,3 +1,4 @@
+import { useOnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
 import { cn } from "@/lib/utils";
 import { Separator } from "@radix-ui/react-dropdown-menu";
 import React from "react";
@@ -6,15 +7,9 @@ interface Activatable {
   isActive: boolean;
 }
 
-interface StepperComponentProps {
-  totalSteps: number;
-  currStep: number;
-}
+export default function StepperComponent() {
+  const { currStep, totalSteps } = useOnboardMultiStepFormContext();
 
-export default function StepperComponent({
-  totalSteps,
-  currStep,
-}: StepperComponentProps) {
   return (
     <div className="flex items-center gap-1 px-2">
       {Array.from({ length: totalSteps }, (e, i) => (
@@ -34,9 +29,10 @@ interface StepComponentProps extends Activatable {
 }
 
 function StepComponent({ isActive, value }: StepComponentProps) {
+
   return (
     <div
-      className={cn("w-6 h-6 text-center align-middle rounded-full", {
+      className={cn("w-6 h-6 text-center align-middle rounded-full hover:cursor-pointer", {
         "bg-primary": isActive,
         "outline outline-1 outline-background-100": !isActive,
       })}

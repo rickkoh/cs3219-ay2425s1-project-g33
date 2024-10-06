@@ -14,14 +14,19 @@ const UserProfileSchema = z.object({
   isOnboarded: z.boolean(),
 });
 
+const UpdateUserProfileSchema = UserProfileSchema.omit({ email: true, roles: true });
+
 const UserProfileResponseSchema = createResponseSchema(UserProfileSchema);
 
 type UserProfile = z.infer<typeof UserProfileSchema>;
+type UpdateUserProfile = z.infer<typeof UpdateUserProfileSchema>
 type UserProfileResponse = z.infer<typeof UserProfileResponseSchema>;
 
 export {
   UserProfileSchema,
   UserProfileResponseSchema,
+  UpdateUserProfileSchema,
   type UserProfile,
-  type UserProfileResponse
+  type UserProfileResponse,
+  type UpdateUserProfile,
 }

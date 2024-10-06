@@ -14,28 +14,51 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCallback, useContext } from "react";
-import { OnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
+import { useCallback, useEffect } from "react";
+import { useOnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
+import { editUserProfile } from "@/services/userService";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 const FormSchema = z.object({
   profilePicture: z.string(), // TODO: change to actual image file type
   displayName: z.string(),
+  username: z.string().refine((val) => val === val.toLowerCase(), {
+    message: "Username must be in lowercase",
+  }),
 });
 
 export default function UserDetailsForm() {
-  const { nextStep } = useContext(OnboardMultiStepFormContext);
+  const { userProfile, updateUserProfile, nextStep } =
+    useOnboardMultiStepFormContext();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       profilePicture: "",
-      displayName: "",
+      displayName: userProfile.displayName,
+      username: userProfile.username,
     },
   });
 
-  const onSubmit = useCallback(() => {
-    nextStep();
-  }, [nextStep]);
+  const onSubmit = useCallback(
+    async (data: z.infer<typeof FormSchema>) => {
+      const updatedUserProfile = {
+        ...userProfile,
+        ...data,
+      };
+
+      const userProfileResponse = await editUserProfile(updatedUserProfile);
+
+      if (userProfileResponse.statusCode !== 200) {
+        console.error(userProfileResponse.message);
+        return;
+      }
+
+      updateUserProfile(userProfileResponse.data);
+      nextStep();
+    },
+    [updateUserProfile, userProfile, nextStep]
+  );
 
   return (
     <Card className="mt-3">
@@ -54,13 +77,19 @@ export default function UserDetailsForm() {
           >
             <UserAvatarInput label="Profile Image" name="profilePicture" />
             <TextInput
+              label="Username"
+              name="username"
+              placeholder={"Username"}
+              className="bg-input-background-100"
+            />
+            <TextInput
               label="Display Name"
               name="displayName"
               placeholder={"Name"}
               className="bg-input-background-100"
             />
             <Button className="self-end w-full max-w-40" type="submit">
-              Next
+              {form.formState.isSubmitting ? <LoadingSpinner /> : "Next"}
             </Button>
           </form>
         </Form>
