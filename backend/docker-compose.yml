@@ -22,6 +22,7 @@ services:
       - matching-service
     networks:
       - backend-network
+      - shared-network
 
   question-service:
     build:
@@ -89,4 +90,6 @@ services:
 
 networks:
   backend-network:
+    driver: bridge
+  shared-network:
     driver: bridge

@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: frontend-service
     volumes:
       - .:/app
       - /app/node_modules
@@ -10,4 +11,11 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
+      - PUBLIC_API_URL=http://gateway-service:4000
+    networks:
+      - backend_shared-network
     command: npm run dev
+
+networks:
+  backend_shared-network:
+    external: true
