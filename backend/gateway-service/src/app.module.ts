@@ -5,7 +5,8 @@ import { AuthController } from './modules/auth/auth.controller';
 import { QuestionController } from './modules/question/question.controller';
 import { APP_GUARD } from '@nestjs/core';
 import { AtAuthGuard, RtAuthGuard } from './common/guards';
-import { MatchController } from './modules/match/match.controller';
+import { MatchGateway } from './modules/match/match.controller';
+import { RedisService } from './modules/match/redis.service';
 
 @Module({
   imports: [
@@ -36,21 +37,23 @@ import { MatchController } from './modules/match/match.controller';
       },
       {
         name: 'MATCHING_SERVICE',
-        transport: Transport.REDIS,
+        transport: Transport.TCP,
         options: {
-          host: 'localhost',
-          port: 6379,
+          host: 'matching-service',
+          port: 3004,
         },
       }
     ]),
   ],
-  controllers: [UserController, QuestionController, AuthController, MatchController],
+  controllers: [UserController, QuestionController, AuthController],
   providers: [
     RtAuthGuard,
     {
       provide: APP_GUARD,
       useClass: AtAuthGuard,
     },
+    MatchGateway,
+    RedisService,
   ],
 })
 export class AppModule {}

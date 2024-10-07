@@ -3,6 +3,10 @@ import { Type } from 'class-transformer';
 import { IsArray, IsIn, IsNotEmpty, IsString } from 'class-validator';
 
 export class UserMatchOptionsDto {
+
+  @IsString()
+  userId: string;
+  
   @ApiProperty({
     description: 'Either Easy, Medium, or Hard',
     example: 'Easy',
@@ -10,7 +14,7 @@ export class UserMatchOptionsDto {
   @IsString()
   @IsNotEmpty()
   @IsIn(['Easy', 'Medium', 'Hard'])
-  difficulty: string;
+  selectedDifficulty: string;
 
   @ApiProperty({
     example: ['Stack', 'String'],
@@ -19,5 +23,5 @@ export class UserMatchOptionsDto {
   @IsString({ each: true })
   @IsNotEmpty()
   @Type(() => String)
-  categories: string[];
+  selectedTopic: string[];
 }

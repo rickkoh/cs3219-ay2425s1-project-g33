@@ -1,59 +1,81 @@
-import { Inject } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClientProxy } from '@nestjs/microservices';
-import { Socket } from 'socket.io';
 import {
-  ConnectedSocket,
-  MessageBody,
-  SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
+  OnGatewayInit,
+  ConnectedSocket,
+  SubscribeMessage,
+  MessageBody,
 } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { RedisService } from './redis.service';
+import { ClientProxy } from '@nestjs/microservices';
+import { Inject } from '@nestjs/common';
 
-@ApiTags('match')
-@ApiBearerAuth('access-token')
 @WebSocketGateway({ namespace: '/match' })
-export class MatchController {
+export class MatchGateway implements OnGatewayInit {
+  @WebSocketServer() server: Server;
+
   constructor(
-    @Inject('MATCHING_SERVICE') private readonly matchingClient: ClientProxy,
+    private redisService: RedisService,
+    @Inject('MATCHING_SERVICE') private matchingClient: ClientProxy,
   ) {}
+
+  afterInit() {
+    // Subscribe to Redis Pub/Sub for user match notifications
+    this.redisService.subscribeToUserMatchEvents((payload) => {
+      this.notifyUsers(payload);
+    });
+  }
+
+  // Handle user connection and add them to a room based on their userId
+  handleConnection(@ConnectedSocket() client: Socket) {
+    const userId = client.handshake.query.userId; // Extract userId from query
+    if (userId) {
+      client.join(userId); // Make the client join a room based on userId
+      console.log(`User ${userId} connected and joined room ${userId}`);
+    } else {
+      console.log('User connected without userId');
+    }
+  }
 
   @SubscribeMessage('requestMatch')
   async handleRequestMatch(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: any,
-  ): Promise<void> {
-    // Send the match request to the microservice
-    this.matchingClient
-      .emit('match.request', {
-        userId: payload.userId,
-        topic: payload.topic,
-        difficulty: payload.difficulty,
-      })
-      .subscribe({
-        next: () => {
-          client.emit('matchInProgress', 'Finding a match...');
-        },
-        error: (err) => {
-          client.emit('matchError', 'Error finding match');
-        },
-      });
+  ) {
+    const matchPayload = {
+      userId: payload.userId,
+      selectedTopic: payload.selectedTopic,
+      selectedDifficulty: payload.selectedDifficulty,
+    };
+
+    // Emit match request event to the microservice
+    const timeoutRef = setTimeout(() => {
+      client.emit('matchTimeout', 'No match found within 30 seconds');
+    }, 30000); // Timeout after 30 seconds if no match is found
+
+    this.matchingClient.emit('match.request', matchPayload).subscribe({
+      next: () => {
+        // If a match is found, clear the timeout
+        clearTimeout(timeoutRef);
+        client.emit('matchInProgress', 'Finding a match...');
+      },
+      error: (err) => {
+        clearTimeout(timeoutRef);  // Also clear the timeout in case of an error
+        client.emit('matchError', 'Error finding match');
+      },
+    });
   }
 
-  @SubscribeMessage('cancelMatch')
-  async handleCancelMatch(
-    @ConnectedSocket() client: Socket, // Access Socket.io client
-    @MessageBody() payload: any, // Payload from the client
-  ): Promise<void> {
-    // Send the cancel request to the matching microservice
-    this.matchingClient
-      .emit('match.cancel', { userId: payload.userId })
-      .subscribe({
-        next: () => {
-          client.emit('matchCancelled', 'Match cancelled.');
-        },
-        error: (err) => {
-          client.emit('cancelError', 'Error cancelling match');
-        },
+  // Notify matched users via WebSocket
+  notifyUsers(userIds: string[]) {
+    userIds.forEach((userId, index) => {
+      const matchedUserId = userIds[index === 0 ? 1 : 0]; // Get the other matched user's ID
+      console.log(`Notifying user ${userId} about match with ${matchedUserId}`);
+      this.server.to(userId).emit('matchNotification', {
+        message: `You have been matched with user ${matchedUserId}`,
+        matchedUserId: matchedUserId,
       });
+    });
   }
 }
