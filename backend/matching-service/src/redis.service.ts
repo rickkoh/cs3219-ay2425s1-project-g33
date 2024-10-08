@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 import { MatchRequestDto } from './dto/match-request.dto';
+import { MatchJob } from './interfaces/match-job.interface';
 
 @Injectable()
 export class RedisService {
@@ -20,11 +21,18 @@ export class RedisService {
 
   // Add user to Redis pool
   async addUserToPool(data: MatchRequestDto): Promise<void> {
-    await this.redisPublisher.sadd('userPool', JSON.stringify(data));
+    const payload: MatchJob = {
+      userId: data.userId,
+      userProficiency: 'beginner',
+      selectedTopic: data.selectedTopic,
+      selectedDifficulty: data.selectedDifficulty,
+      timestamp: Date.now(),
+    };
+    await this.redisPublisher.sadd('userPool', JSON.stringify(payload));
   }
 
   // Get users from Redis pool
-  async getUsersFromPool(): Promise<MatchRequestDto[]> {
+  async getUsersFromPool(): Promise<MatchJob[]> {
     const users = await this.redisPublisher.smembers('userPool');
     return users.map(user => JSON.parse(user));
   }
@@ -45,5 +53,9 @@ export class RedisService {
   // Publish matched users to Redis Pub/Sub channel
   async publishMatchedUsers(matchedUserIds: string[]): Promise<void> {
     await this.redisPublisher.publish('matchChannel', JSON.stringify(matchedUserIds));
+  }
+
+  async publishTimedOutUsers(timedOutUserIds: string[]): Promise<void> {
+    await this.redisPublisher.publish('timeoutChannel', JSON.stringify(timedOutUserIds));
   }
 }

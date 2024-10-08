@@ -3,4 +3,5 @@ export interface MatchJob {
   userProficiency: string;
   selectedTopic: string[];
   selectedDifficulty: string;
+  timestamp: number;
 }

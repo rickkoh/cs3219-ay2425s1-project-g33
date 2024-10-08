@@ -7,7 +7,7 @@ export class RedisService {
 
   constructor() {
     this.redisSubscriber = new Redis({
-      host: 'backend-redis-1', // Your Redis host
+      host: 'backend-redis-1',
       port: 6379,
     });
   }
@@ -27,6 +27,23 @@ export class RedisService {
       if (channel === 'matchChannel') {
         const matchedUsers = JSON.parse(message);
         callback(matchedUsers);
+      }
+    });
+  }
+
+  subscribeToTimeoutEvents(callback: (matchedUsers: any) => void): void {
+    this.redisSubscriber.subscribe('timeoutChannel', (err, count) => {
+      if (err) {
+        console.error('Error subscribing to Redis channel:', err);
+        return;
+      }
+      console.log('Subscribed to Redis channel timeoutChannel.');
+    });
+
+    this.redisSubscriber.on('message', (channel, message) => {
+      if (channel === 'timeoutChannel') {
+        const timedOutUsers = JSON.parse(message);
+        callback(timedOutUsers);
       }
     });
   }

@@ -11,10 +11,20 @@ export class MatchWorkerService {
   async pollForMatches() {
     setInterval(async () => {
       const users = await this.redisService.getUsersFromPool();
-      console.log('polling', users)
+      const currentTime = Date.now();
+      const timeout = 29000; // Slightly less than 30 seconds to account for processing time
+      console.log('Polling', users);
+      // Filter out users who have timed out
+      const activeUsers = users.filter(user => currentTime - user.timestamp < timeout);
 
-      if (users.length >= 2) {
-        const matches = this.rankUsers(users);
+      if (activeUsers.length < users.length) {
+        const timedOutUsers = users.filter(user => currentTime - user.timestamp >= timeout);
+        await this.notifyGatewayTimeout(timedOutUsers.map(user => user.userId));
+        await this.redisService.removeUsersFromPool(timedOutUsers.map(user => user.userId));
+      }
+
+      if (activeUsers.length >= 2) {
+        const matches = this.rankUsers(activeUsers);
         const bestMatch = matches[0];
 
         // Notify the gateway via Redis Pub/Sub
@@ -23,7 +33,7 @@ export class MatchWorkerService {
         // Remove the matched users from the Redis pool
         await this.redisService.removeUsersFromPool([bestMatch.user1.userId, bestMatch.user2.userId]);
       }
-    }, 5000);
+    }, 20000);
   }
 
   // Ranking logic for matches
@@ -51,6 +61,10 @@ export class MatchWorkerService {
   // Notify the gateway service about the match via Redis Pub/Sub
   async notifyGateway(matchedUserIds: string[]) {
     await this.redisService.publishMatchedUsers(matchedUserIds);
+  }
+
+  async notifyGatewayTimeout(userIds: string[]) {
+    await this.redisService.publishTimedOutUsers(userIds);
   }
 }
 

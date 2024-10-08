@@ -11,6 +11,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from './redis.service';
+import { MatchRequestDto } from './dto';
+import { MATCH_SUCCESS, MATCH_TIMEOUT } from './match.event';
 
 @WebSocketGateway({ namespace: '/match' })
 export class MatchGateway implements OnGatewayInit {
@@ -25,22 +27,24 @@ export class MatchGateway implements OnGatewayInit {
   afterInit() {
     // Subscribe to Redis Pub/Sub for match notifications
     this.redisService.subscribeToMatchEvents((matchedUsers) => {
-      this.notifyUsers(matchedUsers);
+      this.notifyUsersWithMatch(matchedUsers);
+    }); 
+
+    this.redisService.subscribeToTimeoutEvents((timedOutUsers) => {
+      this.notifyUsersWithTimeout(timedOutUsers);
     });
   }
 
-  @SubscribeMessage('requestMatch')
+  @SubscribeMessage('matchRequest')
   async handleRequestMatch(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: any,
+    @MessageBody() payload: MatchRequestDto,
   ) {
     const matchPayload = {
       userId: payload.userId,
       selectedTopic: payload.selectedTopic,
       selectedDifficulty: payload.selectedDifficulty,
     };
-
-    let isMatched = false;
 
     // Send the match request to the microservice
     try {
@@ -52,26 +56,36 @@ export class MatchGateway implements OnGatewayInit {
   }
 
   // Notify both matched users via WebSocket
-  notifyUsers(matchedUsers: string[]) {
+  notifyUsersWithMatch(matchedUsers: string[]) {
     const [user1, user2] = matchedUsers;
     const user1SocketId = this.getUserSocketId(user1);
     const user2SocketId = this.getUserSocketId(user2);
     if (user1SocketId) {
-      this.server.to(user1SocketId).emit('matchNotification', {
+      this.server.to(user1SocketId).emit(MATCH_SUCCESS, {
         message: `You have been matched with user ${user2}`,
         matchedUserId: user2,
       });
     }
 
     if (user2SocketId) {
-      this.server.to(user2SocketId).emit('matchNotification', {
+      this.server.to(user2SocketId).emit(MATCH_SUCCESS, {
         message: `You have been matched with user ${user1}`,
         matchedUserId: user1,
       });
     }
   }
 
-  
+  notifyUsersWithTimeout(timedOutUsers: string[]) {
+    timedOutUsers.forEach(user => {
+      const socketId = this.getUserSocketId(user);
+      if (socketId) {
+        this.server.to(socketId).emit(MATCH_TIMEOUT, {
+          message: `You have been timed out.`,
+          timedOutUserId: user,
+        });
+      }
+    });
+  }
 
   handleConnection(@ConnectedSocket() client: Socket) {
     const userId = client.handshake.query.userId;
