@@ -1,4 +1,4 @@
-import { Question, QuestionSchema } from "@/types/Question";
+import { Question } from "@/types/Question";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "../data-table-column-header";
 
@@ -13,24 +13,18 @@ const DurationColumn: ColumnDef<Question> = {
       />
     );
   },
-  cell: ({ row }) => {
-    const question = QuestionSchema.parse(row.original);
-
+  cell: () => {
     // Placeholder duration data
     const tempDuration = 20; // Choose random duration value
 
-    return (
-      <span>
-        {tempDuration} minutes
-      </span>
-    );
+    return <span>{tempDuration} minutes</span>;
   },
-  sortingFn: (rowA, rowB) => {
-    const durationA = Infinity; 
-    const durationB = Infinity; 
+  sortingFn: () => {
+    const durationA = Infinity;
+    const durationB = Infinity;
     return durationA - durationB;
   },
-  filterFn: (row, key, value) => {
+  filterFn: (row, key) => {
     const duration = row.getValue(key);
     return duration !== undefined;
   },

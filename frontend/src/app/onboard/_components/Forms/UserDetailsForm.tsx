@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useOnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
 import { editUserProfile } from "@/services/userService";
 import { LoadingSpinner } from "@/components/LoadingSpinner";

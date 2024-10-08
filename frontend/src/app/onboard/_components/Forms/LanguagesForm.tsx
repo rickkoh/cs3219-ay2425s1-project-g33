@@ -30,8 +30,7 @@ const FormSchema = z.object({
 export default function LanguagesForm() {
   const router = useRouter();
 
-  const { userProfile, updateUserProfile, prevStep } =
-    useOnboardMultiStepFormContext();
+  const { userProfile, prevStep } = useOnboardMultiStepFormContext();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -68,7 +67,7 @@ export default function LanguagesForm() {
         // TODO: Display error message
       }
     },
-    [userProfile]
+    [router, userProfile]
   );
 
   return (

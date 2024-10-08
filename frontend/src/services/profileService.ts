@@ -1,6 +1,11 @@
 "use server";
 import { getAccessToken } from "@/lib/auth";
-import { Profile, ProfileResponse, ProfileResponseSchema, ProfileSchema, UpdateProfile, UpdateProfileSchema } from "@/types/Profile";
+import {
+  ProfileResponse,
+  ProfileResponseSchema,
+  UpdateProfile,
+  UpdateProfileSchema,
+} from "@/types/Profile";
 
 export async function getProfile(): Promise<ProfileResponse> {
   try {
@@ -25,7 +30,9 @@ export async function getProfile(): Promise<ProfileResponse> {
   }
 }
 
-export async function updateProfile(profile: UpdateProfile): Promise<ProfileResponse> {
+export async function updateProfile(
+  profile: UpdateProfile
+): Promise<ProfileResponse> {
   try {
     const access_token = await getAccessToken();
     const updatedProfileDetails = UpdateProfileSchema.parse(profile);
