@@ -12,9 +12,7 @@ export default async function OnboardLayout({
 }) {
   const userProfileResponse: UserProfileResponse = await getCurrentUser();
 
-  if (
-    userProfileResponse.statusCode === 401
-  ) {
+  if (userProfileResponse.statusCode === 401) {
     redirect("/signin");
   }
 
@@ -23,7 +21,13 @@ export default async function OnboardLayout({
       <Navbar isMinimal={true} className="relative mt-8 border-b-0" />
       <div className="flex-1 max-h-20" />
       <main className="flex-1">
-        <OnboardMultiStepFormProvider defaultUserProfile={userProfileResponse.data}>{children}</OnboardMultiStepFormProvider>
+        {userProfileResponse.data && (
+          <OnboardMultiStepFormProvider
+            defaultUserProfile={userProfileResponse.data}
+          >
+            {children}
+          </OnboardMultiStepFormProvider>
+        )}
       </main>
     </div>
   );
