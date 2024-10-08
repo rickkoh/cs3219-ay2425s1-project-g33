@@ -1,16 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { MatchRequestDto } from './dto';
+import { Injectable } from '@nestjs/common';
+import Redis from 'ioredis';
+import { MatchRequestDto } from './dto/match-request.dto';
 import { RedisService } from './redis.service';
 
 @Injectable()
 export class AppService {
-  constructor(
-    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
-    private redisService: RedisService,
-  ) {}
+  constructor(private redisService: RedisService) {}
 
-  async requestMatch(data: MatchRequestDto) {
+  // Add user to the Redis pool
+  async requestMatch(data: MatchRequestDto): Promise<void> {
     await this.redisService.addUserToPool(data);
   }
 }
+
+

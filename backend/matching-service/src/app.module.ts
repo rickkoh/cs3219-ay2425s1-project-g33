@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { BullModule } from '@nestjs/bull';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MatchWorkerService } from './match-worker.service';
-import { NotificationService } from './notification.service';
 import { RedisService } from './redis.service';
 
 @Module({
@@ -33,7 +32,6 @@ import { RedisService } from './redis.service';
   providers: [
     AppService,
     MatchWorkerService,
-    NotificationService,
     RedisService,
   ],
 })

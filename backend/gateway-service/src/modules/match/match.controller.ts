@@ -1,41 +1,32 @@
 import {
   WebSocketGateway,
   WebSocketServer,
-  OnGatewayInit,
-  ConnectedSocket,
   SubscribeMessage,
+  ConnectedSocket,
   MessageBody,
+  OnGatewayInit,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { RedisService } from './redis.service';
+import { Socket, Server } from 'socket.io';
 import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
+import { firstValueFrom } from 'rxjs';
+import { RedisService } from './redis.service';
 
 @WebSocketGateway({ namespace: '/match' })
 export class MatchGateway implements OnGatewayInit {
   @WebSocketServer() server: Server;
+  private userSockets: Map<string, string> = new Map();
 
   constructor(
-    private redisService: RedisService,
     @Inject('MATCHING_SERVICE') private matchingClient: ClientProxy,
+    private redisService: RedisService,
   ) {}
 
   afterInit() {
-    // Subscribe to Redis Pub/Sub for user match notifications
-    this.redisService.subscribeToUserMatchEvents((payload) => {
-      this.notifyUsers(payload);
+    // Subscribe to Redis Pub/Sub for match notifications
+    this.redisService.subscribeToMatchEvents((matchedUsers) => {
+      this.notifyUsers(matchedUsers);
     });
-  }
-
-  // Handle user connection and add them to a room based on their userId
-  handleConnection(@ConnectedSocket() client: Socket) {
-    const userId = client.handshake.query.userId; // Extract userId from query
-    if (userId) {
-      client.join(userId); // Make the client join a room based on userId
-      console.log(`User ${userId} connected and joined room ${userId}`);
-    } else {
-      console.log('User connected without userId');
-    }
   }
 
   @SubscribeMessage('requestMatch')
@@ -49,33 +40,59 @@ export class MatchGateway implements OnGatewayInit {
       selectedDifficulty: payload.selectedDifficulty,
     };
 
-    // Emit match request event to the microservice
-    const timeoutRef = setTimeout(() => {
-      client.emit('matchTimeout', 'No match found within 30 seconds');
-    }, 30000); // Timeout after 30 seconds if no match is found
+    let isMatched = false;
 
-    this.matchingClient.emit('match.request', matchPayload).subscribe({
-      next: () => {
-        // If a match is found, clear the timeout
-        clearTimeout(timeoutRef);
-        client.emit('matchInProgress', 'Finding a match...');
-      },
-      error: (err) => {
-        clearTimeout(timeoutRef);  // Also clear the timeout in case of an error
-        client.emit('matchError', 'Error finding match');
-      },
-    });
+    // Send the match request to the microservice
+    try {
+      await firstValueFrom(this.matchingClient.send('match.request', matchPayload));
+    } catch (error) {
+      client.emit('matchError', `Error requesting match: ${error.message}`);
+      return;
+    }
   }
 
-  // Notify matched users via WebSocket
-  notifyUsers(userIds: string[]) {
-    userIds.forEach((userId, index) => {
-      const matchedUserId = userIds[index === 0 ? 1 : 0]; // Get the other matched user's ID
-      console.log(`Notifying user ${userId} about match with ${matchedUserId}`);
-      this.server.to(userId).emit('matchNotification', {
-        message: `You have been matched with user ${matchedUserId}`,
-        matchedUserId: matchedUserId,
+  // Notify both matched users via WebSocket
+  notifyUsers(matchedUsers: string[]) {
+    const [user1, user2] = matchedUsers;
+    const user1SocketId = this.getUserSocketId(user1);
+    const user2SocketId = this.getUserSocketId(user2);
+    if (user1SocketId) {
+      this.server.to(user1SocketId).emit('matchNotification', {
+        message: `You have been matched with user ${user2}`,
+        matchedUserId: user2,
       });
-    });
+    }
+
+    if (user2SocketId) {
+      this.server.to(user2SocketId).emit('matchNotification', {
+        message: `You have been matched with user ${user1}`,
+        matchedUserId: user1,
+      });
+    }
+  }
+
+  
+
+  handleConnection(@ConnectedSocket() client: Socket) {
+    const userId = client.handshake.query.userId;
+    if (userId) {
+      this.userSockets.set(userId as string, client.id);
+      console.log(`User ${userId} connected with socket ID ${client.id}`);
+    }
+  }
+
+  handleDisconnect(@ConnectedSocket() client: Socket) {
+    const userId = [...this.userSockets.entries()].find(
+      ([, socketId]) => socketId === client.id,
+    )?.[0];
+
+    if (userId) {
+      this.userSockets.delete(userId);
+      console.log(`User ${userId} disconnected`);
+    }
+  }
+
+  getUserSocketId(userId: string): string | undefined {
+    return this.userSockets.get(userId);
   }
 }
