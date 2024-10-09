@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 export default async function WelcomeMessage() {
   const userProfileResponse = await getCurrentUser();
 
-  console.log("welcome server component rendered");
   if (userProfileResponse.statusCode === 401) {
     redirect("/signin");
   }
