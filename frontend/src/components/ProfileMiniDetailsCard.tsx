@@ -26,8 +26,7 @@ function ProfileMiniDetails({
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-4">
         <UserAvatar
-          src={"https://non-existent.com"}
-          name={userProfile.displayName}
+          userProfile={userProfile}
           isHoverEnabled={false}
           className="w-16 h-16"
         />
@@ -83,7 +82,7 @@ interface ProfileMiniDetailsHoverCardProps extends ProfileMiniDetailsProps {
 // Hover card variant
 export function ProfileMiniDetailsHoverCard({
   userProfile,
-  isViewProfileEnabled,
+  isViewProfileEnabled = true,
   children,
 }: ProfileMiniDetailsHoverCardProps) {
   return (

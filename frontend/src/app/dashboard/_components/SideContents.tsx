@@ -13,6 +13,10 @@ export default async function SideContents() {
     redirect("/signin");
   }
 
+  if (!userProfileResponse.data) {
+    return <div>{userProfileResponse.message}</div>;
+  }
+
   return (
     <div className={cn("relative h-full w-full", "col-span-4 xl:col-span-3")}>
       <aside className="sticky flex flex-col gap-4 h-fit top-[5.5rem]">

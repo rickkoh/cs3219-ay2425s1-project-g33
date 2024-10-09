@@ -16,6 +16,10 @@ export default async function OnboardLayout({
     redirect("/signin");
   }
 
+  if (!userProfileResponse.data) {
+    return <div>{userProfileResponse.message}</div>;
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar isMinimal={true} className="relative mt-8 border-b-0" />

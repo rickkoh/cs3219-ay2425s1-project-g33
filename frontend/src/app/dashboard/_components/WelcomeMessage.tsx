@@ -8,6 +8,10 @@ export default async function WelcomeMessage() {
     redirect("/signin");
   }
 
+  if (!userProfileResponse.data) {
+    return <div>{userProfileResponse.message}</div>;
+  }
+
   return (
     <h1 className="text-xl font-bold">
       Welcome Back, {userProfileResponse.data.displayName}!

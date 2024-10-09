@@ -1,34 +1,36 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileMiniDetailsHoverCard } from "./ProfileMiniDetailsCard";
 import { twMerge } from "tailwind-merge";
+import { UserProfile } from "@/types/User";
 
 interface UserAvatarProps {
-  src: string;
-  name: string;
+  userProfile: UserProfile;
   isHoverEnabled?: boolean;
+  isViewProfileEnabled?: boolean;
   className?: string;
 }
 
 export default function UserAvatar({
-  src,
-  name,
+  userProfile,
   isHoverEnabled = true,
   className,
 }: UserAvatarProps) {
   return isHoverEnabled ? (
-    <ProfileMiniDetailsHoverCard>
-      <AvatarWrapper src={src} name={name} className={className} />
+    <ProfileMiniDetailsHoverCard
+      userProfile={userProfile}
+    >
+      <AvatarWrapper userProfile={userProfile} className={className} />
     </ProfileMiniDetailsHoverCard>
   ) : (
-    <AvatarWrapper src={src} name={name} className={className}/>
+    <AvatarWrapper userProfile={userProfile} className={className} />
   );
 }
 
 interface AvatarWrapperProps extends Omit<UserAvatarProps, "isHoverEnabled"> {}
 
-function AvatarWrapper({ src, name, className }: AvatarWrapperProps) {
-  
-  function getInitialsFromName(name: string) { // defined here for encapsulation
+function AvatarWrapper({ userProfile, className }: AvatarWrapperProps) {
+  function getInitialsFromName(name: string) {
+    // defined here for encapsulation
     const chunks = name.split(",");
 
     if (chunks.length > 1) {
@@ -43,9 +45,12 @@ function AvatarWrapper({ src, name, className }: AvatarWrapperProps) {
 
   return (
     <Avatar className={twMerge("w-9 h-9 rounded-full", className)}>
-      <AvatarImage src={src} alt="@shadcn" />
+      <AvatarImage
+        src={"https://nonexistentlink.com"}
+        alt="user_avatar_image"
+      />
       <AvatarFallback className="text-base font-normal text-foreground ">
-        {getInitialsFromName(name)}
+        {getInitialsFromName(userProfile.displayName)}
       </AvatarFallback>
     </Avatar>
   );

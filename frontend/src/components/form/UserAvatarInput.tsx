@@ -32,8 +32,15 @@ export function UserAvatarInput<TFieldValues extends FieldValues>({
             <div className="flex gap-5">
               <UserAvatar
                 isHoverEnabled={false}
-                src={""}
-                name={"_"}
+                userProfile={{
+                  username: "_",
+                  email: "_",
+                  displayName: "_",
+                  proficiency: "Advanced",
+                  languages: ["Python"],
+                  isOnboarded: true,
+                  roles: ["user"],
+                }}
                 className="w-20 h-20"
               />
               <div className="flex flex-col items-start flex-1">
