@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { parseJwt } from "@/lib/auth";
+import { getAccessToken, parseJwt } from "@/lib/auth";
 import { AccessToken, AccessTokenSchema } from "./types/Token";
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get("access_token");
+  const token = await getAccessToken();
+
   if (!token) {
     return NextResponse.redirect(new URL("/signin", request.url));
   }
 
-  const tokenValue: AccessToken = AccessTokenSchema.parse(token.value);
+  const tokenValue: AccessToken = AccessTokenSchema.parse(token);
   const decoded = parseJwt(tokenValue);
 
   if (!decoded.isOnboarded) {
