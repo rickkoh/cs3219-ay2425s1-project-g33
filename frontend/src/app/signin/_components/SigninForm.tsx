@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   Card,
   CardContent,
@@ -9,11 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { User, Lock } from "lucide-react";
+// import { User, Lock } from "lucide-react";
 import { useCallback } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { login } from "@/services/authService";
+import { login, loginSSO } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { TextInput } from "@/components/form/TextInput";
@@ -21,6 +21,11 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Separator } from "@radix-ui/react-dropdown-menu";
+import Image from "next/image";
+import GoogleIconSvg from "@public/assets/icons/google.svg";
+import GithubIconSvg from "@public/assets/icons/github.svg";
+import { AccountProvider, AccountProviderEnum } from "@/types/AccountProvider";
+import { Lock, Mail } from "lucide-react";
 
 const FormSchema = z.object({
   email: z.string(),
@@ -37,6 +42,13 @@ export default function SigninForm() {
   });
 
   const { handleSubmit, formState } = methods;
+
+  const handleSSOButtonClick = useCallback(
+    async (provider: AccountProvider) => {
+      await loginSSO(provider);
+    },
+    []
+  );
 
   const onSubmit = useCallback(
     async (data: z.infer<typeof FormSchema>) => {
@@ -64,7 +76,7 @@ export default function SigninForm() {
   );
 
   return (
-    <Card className="p-3 mt-3">
+    <Card className="p-2 mt-3">
       <CardHeader>
         <CardTitle className="text-xl">Welcome!</CardTitle>
         <CardDescription className="text-card-foreground-100">
@@ -81,13 +93,17 @@ export default function SigninForm() {
                 <TextInput
                   label={""}
                   name="email"
+                  type="email"
                   placeholder="Email"
+                  Icon={Mail}
                   className="bg-input-background-100"
                 />
                 <TextInput
                   label={""}
                   name="password"
                   placeholder="Password"
+                  type="password"
+                  Icon={Lock}
                   className="bg-input-background-100"
                 />
               </div>
@@ -122,11 +138,36 @@ export default function SigninForm() {
 
           {/* Socials */}
           <div className="flex flex-row justify-center gap-x-4">
-            <button className="rounded-md">{/*<FaGithub size={24}/> */}</button>
-
-            <button className="rounded-md">
-              {/* <FaGoogle size={24}/> */}
-            </button>
+            <Button
+              variant="soft"
+              size="icon"
+              onClick={() =>
+                handleSSOButtonClick(AccountProviderEnum.enum.github)
+              }
+            >
+              <Image
+                src={GithubIconSvg}
+                alt="Github icon"
+                width={20}
+                height={20}
+                className="w-5 h-5 stroke-primary fill-primary"
+              />
+            </Button>
+            <Button
+              variant="soft"
+              size="icon"
+              onClick={() =>
+                handleSSOButtonClick(AccountProviderEnum.enum.google)
+              }
+            >
+              <Image
+                src={GoogleIconSvg}
+                alt="Google icon"
+                width={20}
+                height={20}
+                className="w-5 h-5 stroke-primary fill-primary"
+              />
+            </Button>
           </div>
 
           {/* Sign up here */}

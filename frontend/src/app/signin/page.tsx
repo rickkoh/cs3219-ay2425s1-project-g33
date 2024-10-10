@@ -4,7 +4,7 @@ export default function SigninPage() {
 
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-sm mx-auto">
       <SigninForm/>
     </div>
   );

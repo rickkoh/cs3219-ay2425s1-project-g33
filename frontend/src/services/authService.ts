@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 import {
   AccessTokenResponse,
@@ -15,6 +16,7 @@ import {
 } from "@/types/AuthCredentials";
 import { LogoutResponse, LogoutResposeSchema } from "@/types/AuthResponses";
 import { getAccessToken } from "@/lib/auth";
+import { AccountProvider } from "@/types/AccountProvider";
 
 export async function login(
   credientials: LoginCredentials
@@ -58,6 +60,25 @@ export async function login(
       statusCode: 500,
       message: String(error),
     };
+  }
+}
+
+export async function loginSSO(provider: AccountProvider) {
+  try {
+    const res: Response = await fetch(
+      process.env.PUBLIC_API_URL + `/api/auth/${provider}`,
+      {
+        cache: "no-cache",
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    redirect(res.url);
+  } catch (error) {
+    console.error(error);
   }
 }
 
