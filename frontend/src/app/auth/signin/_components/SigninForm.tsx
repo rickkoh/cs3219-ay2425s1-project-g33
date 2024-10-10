@@ -175,7 +175,7 @@ export default function SigninForm() {
             <p>
               {" "}
               No account yet? Click here to{" "}
-              <Link href="/signup" className="hover:underline text-primary">
+              <Link href="/auth/signup" className="hover:underline text-primary">
                 Sign up
               </Link>{" "}
             </p>

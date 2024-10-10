@@ -7,7 +7,7 @@ import { AccessToken, AccessTokenSchema } from "./types/Token";
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token");
   if (!token) {
-    return NextResponse.redirect(new URL("/signin", request.url));
+    return NextResponse.redirect(new URL("/auth/signin", request.url));
   }
 
   const tokenValue: AccessToken = AccessTokenSchema.parse(token.value);
