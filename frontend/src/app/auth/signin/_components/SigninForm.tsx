@@ -45,7 +45,8 @@ export default function SigninForm() {
 
   const handleSSOButtonClick = useCallback(
     async (provider: AccountProvider) => {
-      await loginSSO(provider);
+      const resUrl = await loginSSO(provider);
+      window.location.href = resUrl;
     },
     []
   );
@@ -111,7 +112,7 @@ export default function SigninForm() {
               {/* Forgot password link */}
               <div className="pt-2 pb-2 text-right">
                 <Link
-                  href="/forgotpassword"
+                  href="#"
                   className="text-sm text-primary hover:underline"
                 >
                   {" "}

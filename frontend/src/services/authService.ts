@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 
 import {
   AccessTokenResponse,
@@ -63,7 +63,7 @@ export async function login(
   }
 }
 
-export async function loginSSO(provider: AccountProvider) {
+export async function loginSSO(provider: AccountProvider): string {
   try {
     const res: Response = await fetch(
       process.env.PUBLIC_API_URL + `/api/auth/${provider}`,
@@ -76,7 +76,7 @@ export async function loginSSO(provider: AccountProvider) {
       }
     );
 
-    redirect(res.url);
+    return res.url;
   } catch (error) {
     console.error(error);
   }
