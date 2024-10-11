@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { login, requestSSOUrl } from "@/services/authService";
@@ -36,6 +36,8 @@ export default function SigninForm() {
 
   const { toast } = useToast();
 
+  const [isSSORedirecting, setIsSSORedirecting] = useState<boolean>(false);
+
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
   });
@@ -44,6 +46,7 @@ export default function SigninForm() {
 
   const handleSSOButtonClick = useCallback(
     async (provider: AccountProvider) => {
+      setIsSSORedirecting(true);
       const resUrl = await requestSSOUrl(provider);
       window.location.href = resUrl.data;
     },
@@ -52,7 +55,7 @@ export default function SigninForm() {
 
   const onSubmit = useCallback(
     async (data: z.infer<typeof FormSchema>) => {
-      if (formState.isSubmitting) return;
+      if (formState.isSubmitting || isSSORedirecting) return;
       const accessTokenResponse = await login(data);
       if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
         localStorage.setItem(
@@ -72,7 +75,7 @@ export default function SigninForm() {
         // TODO: Display error message
       }
     },
-    [router, toast, formState.isSubmitting]
+    [router, toast, formState.isSubmitting, isSSORedirecting]
   );
 
   return (
@@ -119,9 +122,14 @@ export default function SigninForm() {
               {/* Sign In Button */}
               <Button
                 type="submit"
+                disabled={formState.isSubmitting || isSSORedirecting}
                 className="w-full py-2 mt-5 rounded-md bg-primary"
               >
-                {formState.isSubmitting ? <LoadingSpinner /> : "Sign in"}
+                {formState.isSubmitting || isSSORedirecting ? (
+                  <LoadingSpinner />
+                ) : (
+                  "Sign in"
+                )}
               </Button>
             </form>
           </Form>
@@ -136,6 +144,7 @@ export default function SigninForm() {
           {/* Socials */}
           <div className="flex flex-row justify-center gap-x-4">
             <Button
+              disabled={formState.isSubmitting || isSSORedirecting}
               variant="soft"
               size="icon"
               onClick={() =>
@@ -151,6 +160,7 @@ export default function SigninForm() {
               />
             </Button>
             <Button
+              disabled={formState.isSubmitting || isSSORedirecting}
               variant="soft"
               size="icon"
               onClick={() =>

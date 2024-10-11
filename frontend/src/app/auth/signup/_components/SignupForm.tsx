@@ -1,6 +1,6 @@
 "use client";
 
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   Card,
   CardContent,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { requestSSOUrl, signup } from "@/services/authService";
@@ -45,6 +45,8 @@ const SignupFormSchema = z
 export default function SignupForm() {
   const router = useRouter();
 
+  const [isSSORedirecting, setIsSSORedirecting] = useState<boolean>(false);
+
   const methods = useForm<z.infer<typeof SignupFormSchema>>({
     resolver: zodResolver(SignupFormSchema),
     defaultValues: {},
@@ -54,34 +56,37 @@ export default function SignupForm() {
 
   const handleSSOButtonClick = useCallback(
     async (provider: AccountProvider) => {
+      setIsSSORedirecting(true);
       const resUrl = await requestSSOUrl(provider);
       window.location.href = resUrl.data;
     },
     []
   );
 
-  const onSubmit: SubmitHandler<z.infer<typeof SignupFormSchema>> = async (
-    data
-  ) => {
-    if (data.password !== data.confirmPassword) {
-      methods.setError("confirmPassword", {
-        type: "manual",
-        message: "Passwords do not match.",
-      });
-      return;
-    }
+  const onSubmit = useCallback(
+    async (data: z.infer<typeof SignupFormSchema>) => {
+      if (formState.isSubmitting || isSSORedirecting) return;
+      if (data.password !== data.confirmPassword) {
+        methods.setError("confirmPassword", {
+          type: "manual",
+          message: "Passwords do not match.",
+        });
+        return;
+      }
 
-    const accessTokenResponse = await signup(data);
-    if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
-      localStorage.setItem(
-        "access_token",
-        accessTokenResponse.data.access_token
-      );
-      router.replace("/dashboard");
-    } else {
-      // TODO: Display error message
-    }
-  };
+      const accessTokenResponse = await signup(data);
+      if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
+        localStorage.setItem(
+          "access_token",
+          accessTokenResponse.data.access_token
+        );
+        router.replace("/dashboard");
+      } else {
+        // TODO: Display error message
+      }
+    },
+    [router, methods, formState.isSubmitting, isSSORedirecting]
+  );
 
   return (
     <Card className="p-2 mt-3">
@@ -126,9 +131,14 @@ export default function SignupForm() {
               {/* Sign In Button */}
               <Button
                 type="submit"
+                disabled={formState.isSubmitting || isSSORedirecting}
                 className="w-full py-2 rounded-md mt-7 bg-primary"
               >
-                {formState.isSubmitting ? <LoadingSpinner /> : "Get started"}
+                {formState.isSubmitting || isSSORedirecting ? (
+                  <LoadingSpinner />
+                ) : (
+                  "Get started"
+                )}
               </Button>
             </form>
           </Form>
@@ -143,6 +153,7 @@ export default function SignupForm() {
           {/* Socials */}
           <div className="flex flex-row justify-center gap-x-4">
             <Button
+              disabled={formState.isSubmitting || isSSORedirecting}
               variant="soft"
               size="icon"
               onClick={() =>
@@ -158,6 +169,7 @@ export default function SignupForm() {
               />
             </Button>
             <Button
+              disabled={formState.isSubmitting || isSSORedirecting}
               variant="soft"
               size="icon"
               onClick={() =>
