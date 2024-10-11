@@ -13,7 +13,7 @@ export default async function OnboardLayout({
   const userProfileResponse: UserProfileResponse = await getCurrentUser();
 
   if (userProfileResponse.statusCode === 401) {
-    redirect("/signin");
+    redirect("/auth/signin");
   }
 
   if (!userProfileResponse.data) {

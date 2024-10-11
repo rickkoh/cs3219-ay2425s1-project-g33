@@ -1,5 +1,15 @@
 import { z } from "zod";
 import { createResponseSchema } from "./Response";
 
-export const LogoutResposeSchema = createResponseSchema(z.boolean());
-export type LogoutResponse = z.infer<typeof LogoutResposeSchema>;
+const LogoutResposeSchema = createResponseSchema(z.boolean());
+const RequestSSOUrlResponseSchema = createResponseSchema(z.string());
+
+type RequestSSOUrlResponse = z.infer<typeof RequestSSOUrlResponseSchema>;
+type LogoutResponse = z.infer<typeof LogoutResposeSchema>;
+
+export {
+  LogoutResposeSchema,
+  RequestSSOUrlResponseSchema,
+  type LogoutResponse,
+  type RequestSSOUrlResponse,
+};

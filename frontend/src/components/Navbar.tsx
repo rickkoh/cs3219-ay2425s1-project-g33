@@ -85,7 +85,7 @@ async function NavUserDetails() {
   const userProfileResponse = await getCurrentUser();
 
   if (userProfileResponse.statusCode === 401) {
-    redirect("/signin");
+    redirect("/auth/signin");
   }
 
   if (!userProfileResponse.data) {

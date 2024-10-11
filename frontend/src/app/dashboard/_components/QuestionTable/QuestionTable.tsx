@@ -16,7 +16,7 @@ export default async function QuestionTable() {
     questionsResponse.statusCode === 401 ||
     categoriesResponse.statusCode === 401
   ) {
-    redirect("/signin");
+    redirect("/auth/signin");
   }
 
   if (!questionsResponse.data) {

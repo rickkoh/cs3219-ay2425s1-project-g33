@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect, RedirectType } from "next/navigation";
 
 import {
   AccessTokenResponse,
@@ -14,7 +13,12 @@ import {
   SignupData,
   SignupDataSchema,
 } from "@/types/AuthCredentials";
-import { LogoutResponse, LogoutResposeSchema } from "@/types/AuthResponses";
+import {
+  RequestSSOUrlResponse,
+  RequestSSOUrlResponseSchema,
+  LogoutResponse,
+  LogoutResposeSchema,
+} from "@/types/AuthResponses";
 import { getAccessToken } from "@/lib/auth";
 import { AccountProvider } from "@/types/AccountProvider";
 
@@ -63,7 +67,9 @@ export async function login(
   }
 }
 
-export async function loginSSO(provider: AccountProvider): string {
+export async function requestSSOUrl(
+  provider: AccountProvider
+): Promise<RequestSSOUrlResponse> {
   try {
     const res: Response = await fetch(
       process.env.PUBLIC_API_URL + `/api/auth/${provider}`,
@@ -76,9 +82,17 @@ export async function loginSSO(provider: AccountProvider): string {
       }
     );
 
-    return res.url;
+    return RequestSSOUrlResponseSchema.parse({
+      statusCode: 200,
+      message: "Url successfully fetched.",
+      data: res.url,
+    });
   } catch (error) {
     console.error(error);
+    return {
+      statusCode: 500,
+      message: String(error),
+    };
   }
 }
 

@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useCallback } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { login, loginSSO } from "@/services/authService";
+import { login, requestSSOUrl } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { TextInput } from "@/components/form/TextInput";
@@ -45,8 +45,8 @@ export default function SigninForm() {
 
   const handleSSOButtonClick = useCallback(
     async (provider: AccountProvider) => {
-      const resUrl = await loginSSO(provider);
-      window.location.href = resUrl;
+      const resUrl = await requestSSOUrl(provider);
+      window.location.href = resUrl.data;
     },
     []
   );
@@ -111,10 +111,7 @@ export default function SigninForm() {
 
               {/* Forgot password link */}
               <div className="pt-2 pb-2 text-right">
-                <Link
-                  href="#"
-                  className="text-sm text-primary hover:underline"
-                >
+                <Link href="#" className="text-sm text-primary hover:underline">
                   {" "}
                   Forgot password?{" "}
                 </Link>
@@ -176,7 +173,10 @@ export default function SigninForm() {
             <p>
               {" "}
               No account yet? Click here to{" "}
-              <Link href="/auth/signup" className="hover:underline text-primary">
+              <Link
+                href="/auth/signup"
+                className="hover:underline text-primary"
+              >
                 Sign up
               </Link>{" "}
             </p>
