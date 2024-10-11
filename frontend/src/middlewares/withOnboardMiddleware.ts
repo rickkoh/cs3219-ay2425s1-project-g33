@@ -13,8 +13,6 @@ export function withOnboardMiddlware(
   ) => {
     const accessToken = request.cookies.get("access_token")?.value;
 
-    response = response || NextResponse.next();
-
     if (!accessToken) return middleware(request, event, response);
 
     const decoded = parseJwt(accessToken);
