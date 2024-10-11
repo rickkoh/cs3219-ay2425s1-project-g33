@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useCallback } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSSO, signup } from "@/services/authService";
+import { requestSSOUrl, signup } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import { TextInput } from "@/components/form/TextInput";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -54,7 +54,8 @@ export default function SignupForm() {
 
   const handleSSOButtonClick = useCallback(
     async (provider: AccountProvider) => {
-      await loginSSO(provider);
+      const resUrl = await requestSSOUrl(provider);
+      window.location.href = resUrl.data;
     },
     []
   );

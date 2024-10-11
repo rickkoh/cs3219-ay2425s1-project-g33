@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-// import { User, Lock } from "lucide-react";
 import { useCallback } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,7 +72,7 @@ export default function SigninForm() {
         // TODO: Display error message
       }
     },
-    [router, toast]
+    [router, toast, formState.isSubmitting]
   );
 
   return (

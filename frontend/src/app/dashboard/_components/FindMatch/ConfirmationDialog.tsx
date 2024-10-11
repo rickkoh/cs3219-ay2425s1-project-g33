@@ -36,10 +36,20 @@ export default function ConfirmationDialog() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex flex-row items-end justify-center w-full gap-4">
-          <UserAvatar src={"https://nonexistent-link"} name="Jm San Diego" />
+          <UserAvatar
+            userProfile={{
+              username: "jmsandiegoo",
+              email: "test@gmail.com",
+              displayName: "Jm San Diego",
+              proficiency: "Advanced",
+              languages: ["Python"],
+              isOnboarded: true,
+              roles: ["user"],
+            }}
+          />
           <Ellipsis />
           <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+            <AvatarImage />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
         </div>
