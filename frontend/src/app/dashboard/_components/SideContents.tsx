@@ -1,7 +1,7 @@
 import { ProfileMiniDetailsCard } from "@/components/ProfileMiniDetailsCard";
 import StreakCalendarCard from "./StreakCalendarCard";
 import { QuestionsStatsCard } from "./QuestionsStatsCard";
-import { FindMatchButton } from "./FindMatchButton";
+import FindMatchButton from "./FindMatch/FindMatchButton";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/services/userService";
 import { redirect } from "next/navigation";
