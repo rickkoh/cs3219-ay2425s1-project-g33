@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { EditProfile } from './EditProfile';
-import { Profile } from '@/types/Profile';
+import { UserProfile } from '@/types/User';
 
 interface EditProfileButtonProps {
-  profileDetails: Profile;
+  userProfileDetails: UserProfile;
 }
 
-export default function EditProfileButton({ profileDetails }: EditProfileButtonProps) {
+export default function EditProfileButton({ userProfileDetails }: EditProfileButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -25,7 +25,7 @@ export default function EditProfileButton({ profileDetails }: EditProfileButtonP
         <EditProfile
           isOpen={isOpen}
           setIsOpen={setIsOpen}
-          userProfile={profileDetails}
+          userProfile={userProfileDetails}
         />
       )}
     </>

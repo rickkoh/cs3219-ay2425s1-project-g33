@@ -18,8 +18,11 @@ import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/form/TextInput";
 import { RadioGroupInput } from "@/components/form/RadioGroupInput";
 import { useToast } from "@/hooks/use-toast";
-import { updateProfile } from "@/services/profileService";
+import { editUserProfile } from "@/services/userService";
 import { useRouter } from "next/navigation";
+import { LanguageEnum } from "@/types/Languages";
+import { ProficiencyEnum } from "@/types/Proficiency";
+import { RoleEnum } from "@/types/Role";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -31,7 +34,11 @@ const FormSchema = z.object({
   displayName: z.string().min(1, "Display Name is required"),
   username: z.string().min(1, "Username is required"),
   email: z.string().email("Invalid email format"),
-  proficiency: z.enum(["Beginner", "Intermediate", "Advanced"]),
+  roles: z.array(RoleEnum),
+  proficiency: ProficiencyEnum,
+  languages: z.array(LanguageEnum),
+  isOnboarded: z.boolean(),
+  profilePictureUrl: z.string(),
 });
 
 export function EditProfile({
@@ -54,7 +61,7 @@ export function EditProfile({
 
   const onSubmit = useCallback(
     async (data: z.infer<typeof FormSchema>) => {
-      const response = await updateProfile(data);
+      const response = await editUserProfile(data);
 
       if (response.statusCode !== 200) {
           toast({
