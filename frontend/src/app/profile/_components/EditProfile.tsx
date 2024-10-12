@@ -11,26 +11,20 @@ import React, { useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { UserProfile } from "@/types/User";
 
-import { Form, FormLabel } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/form/TextInput";
 import { RadioGroupInput } from "@/components/form/RadioGroupInput";
 import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CodeXml } from "lucide-react";
 import { updateProfile } from "@/services/profileService";
 import { useRouter } from "next/navigation";
 
 interface EditProfileModalProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  userProfile: {
-    displayName: string;
-    username: string;
-    email: string;
-    proficiency: string;
-  };
+  userProfile: UserProfile;
 }
 
 const FormSchema = z.object({
@@ -54,6 +48,7 @@ export function EditProfile({
       displayName: userProfile.displayName,
       username: userProfile.username,
       email: userProfile.email,
+      proficiency: userProfile.proficiency,
     },
   });
 
