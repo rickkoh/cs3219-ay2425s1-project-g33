@@ -14,6 +14,7 @@ import { z } from "zod";
 import { UserProfile } from "@/types/User";
 
 import { Form } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/form/TextInput";
 import { RadioGroupInput } from "@/components/form/RadioGroupInput";
@@ -64,20 +65,20 @@ export function EditProfile({
       const response = await editUserProfile(data);
 
       if (response.statusCode !== 200) {
-          toast({
-            variant: "destructive",
-            title: "Error updating profile",
-            description: response.message,
-          });
-          return;
-        } else {
+        toast({
+          variant: "destructive",
+          title: "Error updating profile",
+          description: response.message,
+        });
+        return;
+      } else {
         toast({
           title: "Profile updated!",
           description: "Your profile has been updated successfully.",
         });
         setIsOpen(false);
         router.refresh();
-        }
+      }
     },
 
     [toast, setIsOpen, router]
@@ -93,8 +94,8 @@ export function EditProfile({
               onSubmit={form.handleSubmit(onSubmit)}
               className="flex flex-col space-y-4"
             >
-            {/* Profile Image Upload */}
-            {/*<FormLabel className="pt-8">Profile Image</FormLabel>
+              {/* Profile Image Upload */}
+              {/*<FormLabel className="pt-8">Profile Image</FormLabel>
              <div className="flex flex-row justify-center items-center p-2">
                 <input
                     type="file"
@@ -121,36 +122,43 @@ export function EditProfile({
                 </div>
             </div> */}
 
-            {/* Display Name */}
-            <TextInput label="Display Name" name="displayName" placeholder="Display Name" />
+              {/* Display Name */}
+              <TextInput
+                label="Display Name"
+                name="displayName"
+                placeholder="Display Name"
+              />
 
-            {/* Username */}
-            <TextInput label="Username" name="username" placeholder="Username" />
-            {form.formState.errors.username && (
-            <p className="text-destructive text-sm">
-                {form.formState.errors.username.message || "Username already taken"}
-            </p>
-            )}
+              {/* Username */}
+              <TextInput
+                label="Username"
+                name="username"
+                placeholder="Username"
+              />
+              {form.formState.errors.username && (
+                <p className="text-destructive text-sm">
+                  {form.formState.errors.username.message ||
+                    "Username already taken"}
+                </p>
+              )}
 
-            {/* Email */}
-            {/* <TextInput label="Email" name="email" placeholder="Email" /> */}
+              {/* Email */}
+              {/* <TextInput label="Email" name="email" placeholder="Email" /> */}
 
-            {/* Proficiency Radio Buttons */}
-            <RadioGroupInput
-            label="Proficiency"
-            name="proficiency"
-            options={[
-                { value: "Beginner", optionLabel: "Beginner" },
-                { value: "Intermediate", optionLabel: "Intermediate" },
-                { value: "Advanced", optionLabel: "Advanced" },
-            ]}
-            />
+              {/* Proficiency Radio Buttons */}
+              <RadioGroupInput
+                label="Proficiency"
+                name="proficiency"
+                options={[
+                  { value: "Beginner", optionLabel: "Beginner" },
+                  { value: "Intermediate", optionLabel: "Intermediate" },
+                  { value: "Advanced", optionLabel: "Advanced" },
+                ]}
+              />
 
-            <Button className="p-5" type="submit">
-            {form.formState.isSubmitting
-                ? "Updating Profile"
-                : "Save"}
-            </Button>
+              <Button className="p-5" type="submit">
+                {form.formState.isSubmitting ? "Updating Profile" : "Save"}
+              </Button>
             </form>
           </Form>
         </DialogHeader>

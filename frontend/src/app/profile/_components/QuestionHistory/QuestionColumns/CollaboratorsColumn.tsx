@@ -1,10 +1,27 @@
 import { Question } from "@/types/Question";
 import { ColumnDef } from "@tanstack/react-table";
 import UserAvatar from "@/components/UserAvatar";
+import { UserProfile } from "@/types/User";
 
-const mockCollaborators = [
-  { id: 1, name: "Jm San Diego" },
-  { id: 2, name: "Charlie Brown"},
+const mockCollaborators: UserProfile[] = [
+  {
+    username: "jmsandiegoo",
+    email: "test@gmail.com",
+    displayName: "Jm San Diego",
+    proficiency: "Advanced",
+    languages: ["Python"],
+    isOnboarded: true,
+    roles: ["user"],
+  },
+  {
+    username: "charliebrown",
+    email: "charlie@gmail.com",
+    displayName: "Charlie Brown",
+    proficiency: "Beginner",
+    languages: ["Python"],
+    isOnboarded: true,
+    roles: ["user"],
+  },
 ];
 
 const StatusColumn: ColumnDef<Question> = {
@@ -15,11 +32,10 @@ const StatusColumn: ColumnDef<Question> = {
       <div className="flex items-center space-x-0">
         {mockCollaborators.map((collaborator) => (
           <UserAvatar
-            key={collaborator.id}
-            src={"https://non-existent.com"}
-            name={collaborator.name}
+            key={collaborator.username}
+            userProfile={collaborator}
             isHoverEnabled={true}
-            className="w-8 h-8" 
+            className="w-8 h-8"
           />
         ))}
       </div>

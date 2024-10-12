@@ -36,7 +36,9 @@ export default async function SideContents() {
         <div className="flex flex-row gap-2 p-1">
           <CodeXml className="text-primary" />
           <h4>Language:</h4>
-          <h4 className="text-card-foreground-100">{profileDetails.languages.join(", ")}</h4>
+          <h4 className="text-card-foreground-100">
+            {profileDetails.languages.join(", ")}
+          </h4>
         </div>
 
         <div className="flex flex-row gap-2 p-1">
@@ -64,7 +66,9 @@ function TopicPreference({ title }: { title: string }) {
   return (
     <Card>
       <div className="flex flex-wrap gap-2">
-        <label className="px-3 py-1 rounded-md bg-background-200 text-primary">{title}</label>
+        <label className="px-3 py-1 rounded-md bg-background-200 text-primary">
+          {title}
+        </label>
       </div>
     </Card>
   );

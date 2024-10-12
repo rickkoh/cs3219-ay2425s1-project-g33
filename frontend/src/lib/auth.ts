@@ -24,6 +24,7 @@ export async function getAccessToken(): Promise<AccessToken> {
   if (!access_token || isTokenExpired(access_token)) {
     const accessTokenResponse: AccessTokenResponse = await refreshAccessToken();
     if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
+      cookieStore.set("access_token", accessTokenResponse.data.access_token);
       return accessTokenResponse.data.access_token;
     }
   }

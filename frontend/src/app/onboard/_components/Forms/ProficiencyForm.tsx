@@ -16,7 +16,7 @@ import { editUserProfile } from "@/services/userService";
 import { ProficiencyEnum } from "@/types/Proficiency";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MoveLeft } from "lucide-react";
-import { useCallback, useContext } from "react";
+import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -72,7 +72,6 @@ export default function ProficiencyForm() {
             {/* <RadioGroupCardInput defaultValue="test1"/> */}
             <RadioGroupInput
               label={""}
-              
               name="proficiency"
               options={[
                 {
