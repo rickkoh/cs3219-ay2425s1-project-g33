@@ -12,9 +12,12 @@ const UserProfileSchema = z.object({
   proficiency: ProficiencyEnum,
   languages: z.array(LanguageEnum),
   isOnboarded: z.boolean(),
+  profilePictureUrl: z.string(),
 });
 
 const UpdateUserProfileSchema = UserProfileSchema.omit({ email: true, roles: true });
+//const UpdateProfileSchema = UserProfileSchema.omit({ email: true, provider: true, profilePictureUrl: true, isOnboarded: true, languages: true });
+
 
 const UserProfileResponseSchema = createResponseSchema(UserProfileSchema);
 

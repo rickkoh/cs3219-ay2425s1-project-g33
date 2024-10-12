@@ -22,19 +22,20 @@ export function ProfileCard({userProfile}: ProfileCardProps) {
               languages: ["Python"],
               isOnboarded: true,
               roles: ["user"],
+              profilePictureUrl: "testlink.com",
             }}
             isHoverEnabled={false}
             className="w-16 h-16"
           />
           <div>
-            <h4 className="leading-none">{profile.displayName}</h4>
+            <h4 className="leading-none">{userProfile.displayName}</h4>
             <small className="inline-block mb-1 text-card-foreground-100">
-              @{profile.username}
+              @{userProfile.username}
             </small>
             <p>
               Proficiency:{" "}
               <span className="text-card-foreground-100">
-                {profile.proficiency}
+                {userProfile.proficiency}
               </span>
             </p>
             <p>
