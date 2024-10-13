@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
-import { MatchRequestDto } from '../dto/match-request.dto';
-import { MatchJob } from '../interfaces/match-job.interface';
-import { config } from 'src/configs';
+import { MatchRequestDto } from './dto/match-request.dto';
+import { MatchJob } from './interfaces/match-job.interface';
 
 @Injectable()
 export class RedisService {
@@ -11,12 +10,12 @@ export class RedisService {
 
   constructor() {
     this.redisPublisher = new Redis({
-      host: config.redis.host,
-      port: config.redis.port,
+      host: 'backend-redis-1',
+      port: 6379,
     });
     this.redisSubscriber = new Redis({
-      host: config.redis.host,
-      port: config.redis.port,
+      host: 'backend-redis-1',
+      port: 6379,
     });
   }
 
@@ -35,7 +34,7 @@ export class RedisService {
   // Get users from Redis pool
   async getUsersFromPool(): Promise<MatchJob[]> {
     const users = await this.redisPublisher.smembers('userPool');
-    return users.map((user) => JSON.parse(user));
+    return users.map(user => JSON.parse(user));
   }
 
   // Remove users from Redis pool
@@ -44,28 +43,19 @@ export class RedisService {
 
     // Find and remove users whose userId matches the provided userIds
     userIds.forEach(async (userId) => {
-      const userToRemove = users.find((user) => user.userId === userId);
+      const userToRemove = users.find(user => user.userId === userId);
       if (userToRemove) {
-        await this.redisPublisher.srem(
-          'userPool',
-          JSON.stringify(userToRemove),
-        );
+        await this.redisPublisher.srem('userPool', JSON.stringify(userToRemove));
       }
     });
   }
 
   // Publish matched users to Redis Pub/Sub channel
   async publishMatchedUsers(matchedUserIds: string[]): Promise<void> {
-    await this.redisPublisher.publish(
-      'matchChannel',
-      JSON.stringify(matchedUserIds),
-    );
+    await this.redisPublisher.publish('matchChannel', JSON.stringify(matchedUserIds));
   }
 
   async publishTimedOutUsers(timedOutUserIds: string[]): Promise<void> {
-    await this.redisPublisher.publish(
-      'timeoutChannel',
-      JSON.stringify(timedOutUserIds),
-    );
+    await this.redisPublisher.publish('timeoutChannel', JSON.stringify(timedOutUserIds));
   }
 }

@@ -17,7 +17,6 @@ import axios, { AxiosResponse } from 'axios';
 import { Token, TokenPayload } from './interfaces';
 import { AccountProvider } from './constants/account-provider.enum';
 import * as nodemailer from 'nodemailer';
-import { config } from 'src/configs';
 
 const SALT_ROUNDS = 10;
 
@@ -31,9 +30,9 @@ export class AppService {
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
   ) {
     this.oauthClient = new OAuth2Client({
-      clientId: config.auth.google.clientId,
-      clientSecret: config.auth.google.clientSecret,
-      redirectUri: config.auth.google.callbackUrl,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri: process.env.GOOGLE_CALLBACK_URL,
     });
   }
 
@@ -174,7 +173,7 @@ export class AppService {
     const resetToken = this.jwtService.sign(
       { userId: user._id.toString(), email: dto.email, type: 'reset-password' },
       {
-        secret: config.auth.local.jwtSecret,
+        secret: process.env.JWT_SECRET,
         expiresIn: '1hr',
       },
     );
@@ -207,7 +206,7 @@ export class AppService {
   public async validatePasswordResetToken(token: string): Promise<any> {
     try {
       const decoded = this.jwtService.verify(token, {
-        secret: config.auth.local.jwtSecret,
+        secret: process.env.JWT_SECRET,
       });
       const { userId, email, type } = decoded;
       if (type !== 'reset-password') {
@@ -226,7 +225,7 @@ export class AppService {
   }
 
   private async sendResetEmail(email: string, token: string) {
-    const resetUrl = `${config.frontendUrl}/reset-password?token=${token}`; // To change next time
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`; // To change next time
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -234,8 +233,8 @@ export class AppService {
       port: 465,
       secure: true,
       auth: {
-        user: config.mailer.user,
-        pass: config.mailer.password,
+        user: process.env.NODEMAILER_GMAIL_USER,
+        pass: process.env.NODEMAILER_GMAIL_PASSWORD,
       },
     });
 
@@ -256,7 +255,7 @@ export class AppService {
   public async validateAccessToken(accessToken: string): Promise<any> {
     try {
       const decoded = this.jwtService.verify(accessToken, {
-        secret: config.auth.local.jwtSecret,
+        secret: process.env.JWT_SECRET,
       });
       return decoded;
     } catch (error) {
@@ -267,7 +266,7 @@ export class AppService {
   public async validateRefreshToken(refreshToken: string): Promise<any> {
     try {
       const decoded = this.jwtService.verify(refreshToken, {
-        secret: config.auth.local.jwtRefreshSecret,
+        secret: process.env.JWT_REFRESH_SECRET,
       });
       return decoded;
     } catch (error) {
@@ -301,7 +300,7 @@ export class AppService {
           ...rest,
         },
         {
-          secret: config.auth.local.jwtSecret,
+          secret: process.env.JWT_SECRET,
           expiresIn: '1h', // 1 hour
         },
       ),
@@ -311,7 +310,7 @@ export class AppService {
           ...rest,
         },
         {
-          secret: config.auth.local.jwtRefreshSecret,
+          secret: process.env.JWT_REFRESH_SECRET,
           expiresIn: '7d', // 1 week
         },
       ),
@@ -324,8 +323,8 @@ export class AppService {
   }
 
   getGoogleOAuthUrl(): string {
-    const clientId = config.auth.google.clientId;
-    const redirectUri = config.auth.google.callbackUrl;
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const redirectUri = process.env.GOOGLE_CALLBACK_URL;
     const scope = encodeURIComponent('email profile');
     const responseType = 'code';
     const state = 'secureRandomState';
@@ -405,7 +404,7 @@ export class AppService {
 
       const ticket = await this.oauthClient.verifyIdToken({
         idToken: tokens.id_token,
-        audience: config.auth.google.clientId,
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
 
       const payload = ticket.getPayload();
@@ -429,8 +428,8 @@ export class AppService {
   }
 
   getGithubOAuthUrl(): string {
-    const clientId = config.auth.github.clientId;
-    const redirectUri = config.auth.github.callbackUrl;
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const redirectUri = process.env.GITHUB_CALLBACK_URL;
     const scope = 'user:email';
 
     const githubLoginUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
@@ -487,10 +486,10 @@ export class AppService {
   private async exchangeGithubCodeForTokens(code: string) {
     try {
       const params = {
-        client_id: config.auth.github.clientId,
-        client_secret: config.auth.github.clientSecret,
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
         code: code,
-        redirect_uri: config.auth.github.callbackUrl,
+        redirect_uri: process.env.GITHUB_CALLBACK_URL,
       };
       const headers = {
         Accept: 'application/json',
