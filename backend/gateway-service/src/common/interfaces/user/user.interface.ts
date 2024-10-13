@@ -1,9 +1,4 @@
-import {
-  AccountProvider,
-  Languages,
-  Proficiency,
-  Role,
-} from 'src/common/constants';
+import { AccountProvider, Languages, Proficiency, Role } from 'src/constants';
 
 export interface User {
   username: string;

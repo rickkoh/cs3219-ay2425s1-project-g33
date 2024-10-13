@@ -7,43 +7,42 @@ import { APP_GUARD } from '@nestjs/core';
 import { AtAuthGuard, RtAuthGuard } from './common/guards';
 import { MatchGateway } from './modules/match/match.controller';
 import { RedisService } from './modules/match/redis.service';
-import { config } from './common/configs';
 
 @Module({
   imports: [
     ClientsModule.register([
       {
         name: 'USER_SERVICE',
-        transport: config.userService.transport,
+        transport: Transport.TCP,
         options: {
-          host: config.userService.host,
-          port: config.userService.port,
+          host: 'user-service',
+          port: 3001,
         },
       },
       {
         name: 'QUESTION_SERVICE',
-        transport: config.questionService.transport,
+        transport: Transport.TCP,
         options: {
-          host: config.questionService.host,
-          port: config.questionService.port,
+          host: 'question-service',
+          port: 3002,
         },
       },
       {
         name: 'AUTH_SERVICE',
-        transport: config.authService.transport,
+        transport: Transport.TCP,
         options: {
-          host: config.authService.host,
-          port: config.authService.port,
+          host: 'auth-service',
+          port: 3003,
         },
       },
       {
         name: 'MATCHING_SERVICE',
-        transport: config.matchingService.transport,
+        transport: Transport.TCP,
         options: {
-          host: config.matchingService.host,
-          port: config.matchingService.port,
+          host: 'matching-service',
+          port: 3004,
         },
-      },
+      }
     ]),
   ],
   controllers: [UserController, QuestionController, AuthController],
