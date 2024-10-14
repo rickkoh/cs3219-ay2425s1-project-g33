@@ -16,6 +16,10 @@ export default async function OnboardLayout({
     redirect("/auth/signin");
   }
 
+  if (userProfileResponse.data?.isOnboarded) {
+    redirect("/dashboard");
+  }
+
   if (!userProfileResponse.data) {
     return <div>{userProfileResponse.message}</div>;
   }
