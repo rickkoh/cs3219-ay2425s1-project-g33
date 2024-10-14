@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
 import { ClientProxy } from '@nestjs/microservices';
-import { Inject, UsePipes } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from './redis.service';
 import { MatchRequestDto } from './dto';
@@ -21,7 +21,6 @@ import {
   MATCH_ERROR,
 } from './match.event';
 import { CANCEL_MATCH, FIND_MATCH } from './match.message';
-import { WsValidationPipe } from 'src/common/pipes';
 
 @WebSocketGateway({
   namespace: '/match',
@@ -32,7 +31,6 @@ import { WsValidationPipe } from 'src/common/pipes';
     credentials: true,
   },
 })
-@UsePipes(WsValidationPipe)
 export class MatchGateway implements OnGatewayInit {
   @WebSocketServer() server: Server;
   private userSockets: Map<string, string> = new Map();
@@ -58,6 +56,17 @@ export class MatchGateway implements OnGatewayInit {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MatchRequestDto,
   ) {
+    if (
+      !payload.userId ||
+      !payload.selectedTopic ||
+      !payload.selectedDifficulty
+    ) {
+      client.emit(
+        MATCH_ERROR,
+        'Invalid match request. Please check your payload and try again.',
+      );
+      return;
+    }
     // Send the match request to the microservice
     try {
       firstValueFrom(this.matchingClient.send('match-request', payload))

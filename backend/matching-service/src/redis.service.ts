@@ -28,6 +28,8 @@ export class RedisService {
       selectedDifficulty: data.selectedDifficulty,
       timestamp: Date.now(),
     };
+
+    
     await this.redisPublisher.sadd('userPool', JSON.stringify(payload));
   }
 
