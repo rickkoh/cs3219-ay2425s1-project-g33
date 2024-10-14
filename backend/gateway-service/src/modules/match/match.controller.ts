@@ -67,12 +67,7 @@ export class MatchGateway implements OnGatewayInit {
       return;
     }
 
-    // Retrieve the userId associated with the current socket
-    const storedUserId = [...this.userSockets.entries()].find(
-      ([, socketId]) => socketId === client.id,
-    )?.[0];
-    if (!storedUserId || storedUserId !== payload.userId) {
-      client.emit(EXCEPTION, 'UserId does not match the current socket.');
+    if (!this.validateUserId(client, payload.userId)) {
       return;
     }
 
@@ -104,6 +99,10 @@ export class MatchGateway implements OnGatewayInit {
         EXCEPTION,
         'Invalid userId. Please check your payload and try again.',
       );
+      return;
+    }
+
+    if (!this.validateUserId(client, payload.userId)) {
       return;
     }
 
@@ -238,5 +237,17 @@ export class MatchGateway implements OnGatewayInit {
   private emitExceptionAndDisconnect(client: Socket, message: string) {
     client.emit(EXCEPTION, `Error connecting to /match socket: ${message}`);
     client.disconnect();
+  }
+
+  // Method to validate the userId associated with the current socket
+  private validateUserId(client: Socket, userId: string): boolean {
+    const storedUserId = [...this.userSockets.entries()].find(
+      ([, socketId]) => socketId === client.id,
+    )?.[0];
+    if (!storedUserId || storedUserId !== userId) {
+      client.emit(EXCEPTION, 'UserId does not match the current socket.');
+      return false;
+    }
+    return true;
   }
 }
