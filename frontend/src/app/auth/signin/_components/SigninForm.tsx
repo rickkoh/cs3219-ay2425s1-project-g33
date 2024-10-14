@@ -48,9 +48,17 @@ export default function SigninForm() {
     async (provider: AccountProvider) => {
       setIsSSORedirecting(true);
       const resUrl = await requestSSOUrl(provider);
-      window.location.href = resUrl.data;
+      if (resUrl.data) {
+        window.location.href = resUrl.data;
+      } else {
+        toast({
+          title: "Error!",
+          description: "Social sign in error, try again later.",
+        });
+        setIsSSORedirecting(false);
+      }
     },
-    []
+    [toast]
   );
 
   const onSubmit = useCallback(
