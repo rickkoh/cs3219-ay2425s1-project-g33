@@ -19,6 +19,7 @@ import {
   MATCH_TIMEOUT,
   MATCH_REQUESTED,
   MATCH_ERROR,
+  EXCEPTION,
 } from './match.event';
 import { CANCEL_MATCH, FIND_MATCH } from './match.message';
 
@@ -37,6 +38,7 @@ export class MatchGateway implements OnGatewayInit {
 
   constructor(
     @Inject('MATCHING_SERVICE') private matchingClient: ClientProxy,
+    @Inject('USER_SERVICE') private userClient: ClientProxy,
     private redisService: RedisService,
   ) {}
 
@@ -67,22 +69,19 @@ export class MatchGateway implements OnGatewayInit {
       );
       return;
     }
-    // Send the match request to the microservice
+
     try {
-      firstValueFrom(this.matchingClient.send('match-request', payload))
-        .then(() =>
-          console.log(
-            `Match request from user ${payload.userId} received successfully`,
-          ),
-        )
-        .catch((error) =>
-          console.error(
-            `Error requesting match for user ${payload.userId}: ${error.message}`,
-          ),
-        );
-      this.server.to(client.id).emit(MATCH_REQUESTED, {
-        message: `Match request sent to the matching service.`,
-      });
+      const result = await firstValueFrom(
+        this.matchingClient.send('match-request', payload),
+      );
+
+      if (result.success) {
+        this.server.to(client.id).emit(MATCH_REQUESTED, {
+          message: result.message,
+        });
+      } else {
+        client.emit(MATCH_ERROR, result.message);
+      }
     } catch (error) {
       client.emit(MATCH_ERROR, `Error requesting match: ${error.message}`);
       return;
@@ -94,6 +93,14 @@ export class MatchGateway implements OnGatewayInit {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { userId: string },
   ) {
+    if (!payload.userId) {
+      client.emit(
+        MATCH_ERROR,
+        'Invalid userId. Please check your payload and try again.',
+      );
+      return;
+    }
+
     firstValueFrom(
       this.matchingClient.send('match-cancel', { userId: payload.userId }),
     )
@@ -137,11 +144,42 @@ export class MatchGateway implements OnGatewayInit {
     });
   }
 
-  handleConnection(@ConnectedSocket() client: Socket) {
-    const userId = client.handshake.query.userId;
-    if (userId) {
-      this.userSockets.set(userId as string, client.id);
-      console.log(`User ${userId} connected with socket ID ${client.id}`);
+  async handleConnection(@ConnectedSocket() client: Socket) {
+    const id = client.handshake.query.userId;
+
+    if (!id) {
+      client.emit(
+        EXCEPTION,
+        'Error connecting to /match socket: No userId provided.',
+      );
+      client.disconnect();
+      return;
+    }
+
+    try {
+      const existingUser = await firstValueFrom(
+        this.userClient.send({ cmd: 'get-user-by-id' }, id),
+      );
+
+      if (!existingUser) {
+        client.emit(
+          EXCEPTION,
+          'Error connecting to /match socket: Invalid userId.',
+        );
+        client.disconnect();
+        return;
+      }
+
+      if (id) {
+        this.userSockets.set(id as string, client.id);
+        console.log(`User ${id} connected with socket ID ${client.id}`);
+      }
+    } catch (error) {
+      client.emit(
+        EXCEPTION,
+        `Error connecting to /match socket: ${error.message}`,
+      );
+      return;
     }
   }
 

@@ -4,3 +4,4 @@ export const MATCH_CANCELLED = 'matchCancelled'; // Emitted when a match is canc
 export const MATCH_CONFIRMED = 'matchConfirmed'; // Emitted when a match is confirmed
 export const MATCH_TIMEOUT = 'matchTimeout'; // Emitted after 5 minutes of inactivity
 export const MATCH_ERROR = 'matchError'; // Emitted when an error occurs
+export const EXCEPTION = 'exception'; // Emitted when an exception occurs

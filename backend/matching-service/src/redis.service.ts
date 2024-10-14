@@ -3,6 +3,8 @@ import Redis from 'ioredis';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchJob } from './interfaces/match-job.interface';
 import { config } from 'src/configs';
+import { RpcException } from '@nestjs/microservices';
+import { MatchResponse } from './interfaces';
 
 @Injectable()
 export class RedisService {
@@ -21,27 +23,51 @@ export class RedisService {
   }
 
   // Add user to Redis pool
-  async addUserToPool(data: MatchRequestDto): Promise<void> {
-    const payload: MatchJob = {
-      userId: data.userId,
-      selectedTopic: data.selectedTopic,
-      selectedDifficulty: data.selectedDifficulty,
-      timestamp: Date.now(),
-    };
+  async addUserToPool(data: MatchRequestDto): Promise<MatchResponse> {
+    try {
+      const payload: MatchJob = {
+        userId: data.userId,
+        selectedTopic: data.selectedTopic,
+        selectedDifficulty: data.selectedDifficulty,
+        timestamp: Date.now(),
+      };
+      console.log('Adding user to pool:', payload);
 
-    
-    await this.redisPublisher.sadd('userPool', JSON.stringify(payload));
+      const existingUser = await this.getUserFromPool(data.userId);
+      if (existingUser) {
+        return {
+          success: false,
+          message: 'User already in pool',
+        };
+      }
+
+      await this.redisPublisher.sadd('userPool', JSON.stringify(payload));
+      return {
+        success: true,
+        message: 'User added to pool successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to add user to matching pool: ${error.message}`,
+      };
+    }
+  }
+
+  async getUserFromPool(userId: string): Promise<boolean> {
+    const users = await this.redisPublisher.smembers('userPool');
+    return users.some((user) => JSON.parse(user).userId === userId);
   }
 
   // Get users from Redis pool
-  async getUsersFromPool(): Promise<MatchJob[]> {
+  async getAllUsersFromPool(): Promise<MatchJob[]> {
     const users = await this.redisPublisher.smembers('userPool');
     return users.map((user) => JSON.parse(user));
   }
 
   // Remove users from Redis pool
   async removeUsersFromPool(userIds: string[]) {
-    const users = await this.getUsersFromPool();
+    const users = await this.getAllUsersFromPool();
 
     // Find and remove users whose userId matches the provided userIds
     userIds.forEach(async (userId) => {

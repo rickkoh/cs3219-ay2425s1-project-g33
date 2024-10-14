@@ -9,7 +9,7 @@ export class AppController {
 
   @MessagePattern('match-request')
   async handleMatchRequest(@Payload() data: MatchRequestDto) {
-    await this.appService.requestMatch(data);
+    return this.appService.requestMatch(data);
   }
 
   @MessagePattern('match-cancel')
