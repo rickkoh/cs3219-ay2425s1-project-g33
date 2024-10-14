@@ -18,10 +18,10 @@ import {
   MATCH_CONFIRMED,
   MATCH_TIMEOUT,
   MATCH_REQUESTED,
-  MATCH_ERROR,
   EXCEPTION,
 } from './match.event';
-import { CANCEL_MATCH, FIND_MATCH } from './match.message';
+import { CANCEL_MATCH, CONFIRM_MATCH, FIND_MATCH } from './match.message';
+import { v4 as uuidv4 } from 'uuid';
 
 @WebSocketGateway({
   namespace: '/match',
@@ -35,6 +35,15 @@ import { CANCEL_MATCH, FIND_MATCH } from './match.message';
 export class MatchGateway implements OnGatewayInit {
   @WebSocketServer() server: Server;
   private userSockets: Map<string, string> = new Map();
+  private matchConfirmations: Map<
+    string,
+    {
+      user1: string;
+      user2: string;
+      user1Confirmed: boolean;
+      user2Confirmed: boolean;
+    }
+  > = new Map();
 
   constructor(
     @Inject('MATCHING_SERVICE') private matchingClient: ClientProxy,
@@ -45,7 +54,9 @@ export class MatchGateway implements OnGatewayInit {
   afterInit() {
     // Subscribe to Redis Pub/Sub for match notifications
     this.redisService.subscribeToMatchEvents((matchedUsers) => {
-      this.notifyUsersWithMatch(matchedUsers);
+      const matchId = this.generateMatchId(); // Generate matchId
+      this.notifyUsersMatchFound(matchId, matchedUsers); // Notify users of match with matchId
+      this.trackMatchConfirmation(matchId, matchedUsers); // Track match confirmation
     });
 
     this.redisService.subscribeToTimeoutEvents((timedOutUsers) => {
@@ -63,7 +74,7 @@ export class MatchGateway implements OnGatewayInit {
       !payload.selectedTopic ||
       !payload.selectedDifficulty
     ) {
-      client.emit(EXCEPTION, 'Invalid match request payload.');
+      client.emit(EXCEPTION, 'Invalid payload for match request.');
       return;
     }
 
@@ -95,10 +106,7 @@ export class MatchGateway implements OnGatewayInit {
     @MessageBody() payload: { userId: string },
   ) {
     if (!payload.userId) {
-      client.emit(
-        EXCEPTION,
-        'Invalid userId. Please check your payload and try again.',
-      );
+      client.emit(EXCEPTION, 'Invalid userId.');
       return;
     }
 
@@ -125,36 +133,45 @@ export class MatchGateway implements OnGatewayInit {
     }
   }
 
-  // Notify both matched users via WebSocket
-  notifyUsersWithMatch(matchedUsers: string[]) {
-    const [user1, user2] = matchedUsers;
-    const user1SocketId = this.getUserSocketId(user1);
-    const user2SocketId = this.getUserSocketId(user2);
-    if (user1SocketId && user2SocketId) {
-      this.server.to(user1SocketId).emit(MATCH_FOUND, {
-        message: `You have been matched with user ${user2}`,
-        matchedUserId: user2,
-      });
-      this.server.to(user2SocketId).emit(MATCH_FOUND, {
-        message: `You have been matched with user ${user1}`,
-        matchedUserId: user1,
-      });
+  @SubscribeMessage(CONFIRM_MATCH)
+  async handleConfirmMatch(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { userId: string; matchId: string },
+  ) {
+    if (!payload.userId || !payload.matchId) {
+      client.emit(EXCEPTION, 'Invalid message payload for match confirmation.');
+      return;
+    }
+
+    const { userId, matchId } = payload;
+    if (!this.validateUserId(client, userId)) {
+      return;
+    }
+
+    // Get the confirmation state of the users
+    const confirmationState = this.matchConfirmations.get(matchId);
+    if (!confirmationState) {
+      client.emit(EXCEPTION, 'Invalid Match Id.');
+      return;
+    }
+
+    // Checks which user is confirming the match
+    if (confirmationState.user1 === payload.userId) {
+      confirmationState.user1Confirmed = true;
+    } else if (confirmationState.user2 === payload.userId) {
+      confirmationState.user2Confirmed = true;
+    } else {
+      client.emit(EXCEPTION, 'Invalid userId for this match.');
+      return;
+    }
+
+    // Check if both users have confirmed
+    if (confirmationState.user1Confirmed && confirmationState.user2Confirmed) {
+      this.notifyUsersMatchConfirmed(payload.matchId, confirmationState);
     }
   }
 
-  notifyUsersWithTimeout(timedOutUsers: string[]) {
-    timedOutUsers.forEach((user) => {
-      const socketId = this.getUserSocketId(user);
-      if (socketId) {
-        this.server.to(socketId).emit(MATCH_TIMEOUT, {
-          message: `You have been timed out.`,
-          timedOutUserId: user,
-        });
-      }
-    });
-  }
-
-  async handleConnection(@ConnectedSocket() client: Socket) {
+  async handleConnect(@ConnectedSocket() client: Socket) {
     const id = client.handshake.query.userId as string;
 
     if (!id) {
@@ -183,10 +200,8 @@ export class MatchGateway implements OnGatewayInit {
         return;
       }
 
-      if (id) {
-        this.userSockets.set(id as string, client.id);
-        console.log(`User ${id} connected with socket ID ${client.id}`);
-      }
+      this.userSockets.set(id as string, client.id);
+      console.log(`User ${id} connected with socket ID ${client.id}`);
     } catch (error) {
       this.emitExceptionAndDisconnect(client, error.message);
       return;
@@ -228,6 +243,73 @@ export class MatchGateway implements OnGatewayInit {
         `Error canceling match for user ${userId}: ${error.message}`,
       );
     }
+  }
+
+  trackMatchConfirmation(matchId: string, matchedUsers: string[]) {
+    const confirmationState = {
+      user1: matchedUsers[0],
+      user2: matchedUsers[1],
+      user1Confirmed: false,
+      user2Confirmed: false,
+    };
+
+    this.matchConfirmations.set(matchId, confirmationState);
+  }
+
+  notifyUsersMatchFound(matchId: string, matchedUsers: string[]) {
+    const [user1, user2] = matchedUsers;
+    const user1SocketId = this.getUserSocketId(user1);
+    const user2SocketId = this.getUserSocketId(user2);
+    if (user1SocketId && user2SocketId) {
+      this.server.to(user1SocketId).emit(MATCH_FOUND, {
+        message: `You have been matched with user ${user2}`,
+        matchId,
+      });
+      this.server.to(user2SocketId).emit(MATCH_FOUND, {
+        message: `You have been matched with user ${user1}`,
+        matchId,
+      });
+    }
+  }
+
+  notifyUsersWithTimeout(timedOutUsers: string[]) {
+    timedOutUsers.forEach((user) => {
+      const socketId = this.getUserSocketId(user);
+      if (socketId) {
+        this.server.to(socketId).emit(MATCH_TIMEOUT, {
+          message: `You have been timed out.`,
+          timedOutUserId: user,
+        });
+      }
+    });
+  }
+
+  notifyUsersMatchConfirmed(matchId: string, confirmationState: any) {
+    const user1SocketId = this.getUserSocketId(confirmationState.user1);
+    const user2SocketId = this.getUserSocketId(confirmationState.user2);
+
+    const sessionId = this.generateSessionId(); // TODO - To be substituted with collab-service method in next MS
+
+    if (user1SocketId && user2SocketId) {
+      this.server.to(user1SocketId).emit(MATCH_CONFIRMED, {
+        message: 'Both users have confirmed the match.',
+        sessionId,
+      });
+      this.server.to(user2SocketId).emit(MATCH_CONFIRMED, {
+        message: 'Both users have confirmed the match.',
+        sessionId,
+      });
+    }
+
+    this.matchConfirmations.delete(matchId);
+  }
+
+  private generateMatchId(): string {
+    return uuidv4();
+  }
+
+  private generateSessionId(): string {
+    return uuidv4();
   }
 
   private getUserSocketId(userId: string): string | undefined {
