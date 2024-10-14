@@ -25,6 +25,7 @@ import GoogleIconSvg from "@public/assets/icons/google.svg";
 import GithubIconSvg from "@public/assets/icons/github.svg";
 import { AccountProvider, AccountProviderEnum } from "@/types/AccountProvider";
 import { Lock, Mail } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const SignupFormSchema = z
   .object({
@@ -44,6 +45,8 @@ const SignupFormSchema = z
 
 export default function SignupForm() {
   const router = useRouter();
+
+  const { toast } = useToast();
 
   const [isSSORedirecting, setIsSSORedirecting] = useState<boolean>(false);
 
@@ -73,16 +76,18 @@ export default function SignupForm() {
         });
         return;
       }
-
       const accessTokenResponse = await signup(data);
       if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
         localStorage.setItem(
           "access_token",
           accessTokenResponse.data.access_token
         );
-        router.replace("/dashboard");
+        router.push("/onboard");
       } else {
-        // TODO: Display error message
+        toast({
+          title: "Error!",
+          description: accessTokenResponse.message,
+        });
       }
     },
     [router, methods, formState.isSubmitting, isSSORedirecting]
