@@ -1,8 +1,8 @@
-import { withAuthMiddlware } from "./middlewares/withAuthMiddleware";
-import { withOnboardMiddlware } from "./middlewares/withOnboardMiddleware";
 import { chain } from "./middlewares/chain";
+import { withAuthMiddleware } from "./middlewares/withAuthMiddleware";
+import { withTokenRefreshMiddleware } from "./middlewares/withTokenRefreshMiddleware";
 
-export default chain([withAuthMiddlware, withOnboardMiddlware]);
+export default chain([withTokenRefreshMiddleware, withAuthMiddleware]);
 
 // Define routes that should use the middleware
 export const config = {
