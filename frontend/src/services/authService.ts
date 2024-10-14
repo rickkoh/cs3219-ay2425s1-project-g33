@@ -6,6 +6,7 @@ import {
   AccessTokenResponse,
   AccessTokenResponseSchema,
   RefreshTokenSchema,
+  TokenPairResponse,
   TokenPairResponseSchema,
 } from "@/types/Token";
 import {
@@ -173,7 +174,7 @@ export async function logout(): Promise<LogoutResponse> {
   }
 }
 
-export async function refreshAccessToken(): Promise<AccessTokenResponse> {
+export async function refreshAccessToken(): Promise<TokenPairResponse> {
   try {
     const cookieStore = cookies();
     const refresh_token = RefreshTokenSchema.parse(
@@ -195,24 +196,8 @@ export async function refreshAccessToken(): Promise<AccessTokenResponse> {
     const resObj = await res.json();
 
     const tokenPairResponse = TokenPairResponseSchema.parse(resObj);
-    const accessTokenResponse = AccessTokenResponseSchema.parse(resObj);
 
-    if (tokenPairResponse.data) {
-      const cookieStore = cookies();
-      cookieStore.set("access_token", tokenPairResponse.data.access_token, {
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
-      cookieStore.set("refresh_token", tokenPairResponse.data.refresh_token, {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
-    }
-
-    return accessTokenResponse;
+    return tokenPairResponse;
   } catch (error) {
     return {
       statusCode: 500,
