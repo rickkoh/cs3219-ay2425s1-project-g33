@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsString } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from 'class-validator';
 
 export class MatchRequestDto {
   @IsString()
@@ -8,7 +8,7 @@ export class MatchRequestDto {
 
   @IsArray()
   @IsString({ each: true })
-  @IsNotEmpty()
+  @ArrayNotEmpty()
   @Type(() => String)
   selectedTopic: string[];
 

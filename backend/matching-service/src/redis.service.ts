@@ -24,7 +24,6 @@ export class RedisService {
   async addUserToPool(data: MatchRequestDto): Promise<void> {
     const payload: MatchJob = {
       userId: data.userId,
-      userProficiency: 'beginner',
       selectedTopic: data.selectedTopic,
       selectedDifficulty: data.selectedDifficulty,
       timestamp: Date.now(),

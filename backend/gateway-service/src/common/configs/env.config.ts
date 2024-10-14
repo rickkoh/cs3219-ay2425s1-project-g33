@@ -12,6 +12,7 @@ function getEnvVar(name: string): string {
 }
 
 export const config = {
+  frontendUrl: getEnvVar('FRONTEND_URL'),
   gatewayService: {
     port: parseInt(getEnvVar('GATEWAY_SERVICE_PORT')),
   },
@@ -37,5 +38,8 @@ export const config = {
     transport:
       Transport[getEnvVar('MATCHING_SERVICE_TRANSPORT')] || Transport.TCP,
   },
-  frontendUrl: getEnvVar('FRONTEND_URL'),
+  redis: {
+    host: getEnvVar('REDIS_HOST'),
+    port: parseInt(getEnvVar('REDIS_PORT')),
+  },
 };

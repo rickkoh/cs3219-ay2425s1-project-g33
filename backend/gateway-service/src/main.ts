@@ -1,9 +1,8 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { setupSwagger } from './common/configs/swagger.config';
-import { config } from 'src/common/configs';
+import { HttpResponseInterceptor } from 'src/common/interceptors';
+import { config, setupSwagger } from 'src/common/configs';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -26,7 +25,7 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type, Accept',
   });
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new HttpResponseInterceptor());
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   setupSwagger(app);
 

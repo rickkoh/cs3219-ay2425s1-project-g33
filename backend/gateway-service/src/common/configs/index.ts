@@ -1,1 +1,2 @@
-export { config } from './env.config';
+export * from './env.config';
+export * from './swagger.config';

@@ -16,5 +16,3 @@ export class AppService {
     await this.redisService.removeUsersFromPool([userId]);
   }
 }
-
-

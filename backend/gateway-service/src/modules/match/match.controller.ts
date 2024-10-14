@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
 import { ClientProxy } from '@nestjs/microservices';
-import { Inject } from '@nestjs/common';
+import { Inject, UsePipes } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from './redis.service';
 import { MatchRequestDto } from './dto';
@@ -18,7 +18,10 @@ import {
   MATCH_CONFIRMED,
   MATCH_TIMEOUT,
   MATCH_REQUESTED,
+  MATCH_ERROR,
 } from './match.event';
+import { CANCEL_MATCH, FIND_MATCH } from './match.message';
+import { WsValidationPipe } from 'src/common/pipes';
 
 @WebSocketGateway({
   namespace: '/match',
@@ -29,6 +32,7 @@ import {
     credentials: true,
   },
 })
+@UsePipes(WsValidationPipe)
 export class MatchGateway implements OnGatewayInit {
   @WebSocketServer() server: Server;
   private userSockets: Map<string, string> = new Map();
@@ -49,21 +53,19 @@ export class MatchGateway implements OnGatewayInit {
     });
   }
 
-  @SubscribeMessage('matchRequest')
+  @SubscribeMessage(FIND_MATCH)
   async handleRequestMatch(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MatchRequestDto,
   ) {
-    const matchPayload = {
-      userId: payload.userId,
-      selectedTopic: payload.selectedTopic,
-      selectedDifficulty: payload.selectedDifficulty,
-    };
-
     // Send the match request to the microservice
     try {
-      firstValueFrom(this.matchingClient.send('match.request', matchPayload))
-        .then(() => console.log(`Match requested for user ${payload.userId}`))
+      firstValueFrom(this.matchingClient.send('match-request', payload))
+        .then(() =>
+          console.log(
+            `Match request from user ${payload.userId} received successfully`,
+          ),
+        )
         .catch((error) =>
           console.error(
             `Error requesting match for user ${payload.userId}: ${error.message}`,
@@ -73,18 +75,18 @@ export class MatchGateway implements OnGatewayInit {
         message: `Match request sent to the matching service.`,
       });
     } catch (error) {
-      client.emit('matchError', `Error requesting match: ${error.message}`);
+      client.emit(MATCH_ERROR, `Error requesting match: ${error.message}`);
       return;
     }
   }
 
-  @SubscribeMessage('matchCancel')
+  @SubscribeMessage(CANCEL_MATCH)
   async handleCancelMatch(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { userId: string },
   ) {
     firstValueFrom(
-      this.matchingClient.send('match.cancel', { userId: payload.userId }),
+      this.matchingClient.send('match-cancel', { userId: payload.userId }),
     )
       .then(() => console.log(`Match canceled for user ${payload.userId}`))
       .catch((error) =>
@@ -142,7 +144,7 @@ export class MatchGateway implements OnGatewayInit {
     if (userId) {
       this.userSockets.delete(userId);
       // Remove user from Redis pool
-      firstValueFrom(this.matchingClient.send('match.cancel', { userId }))
+      firstValueFrom(this.matchingClient.send('match-cancel', { userId }))
         .then(() => console.log(`Match canceled for user ${userId}`))
         .catch((error) =>
           console.error(
