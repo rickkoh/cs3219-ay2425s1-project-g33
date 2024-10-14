@@ -32,7 +32,7 @@ export async function getAccessToken(): Promise<AccessToken> {
   return access_token;
 }
 
-function isTokenExpired(token: AccessToken): boolean {
+export function isTokenExpired(token: AccessToken): boolean {
   const decoded = parseJwt(token);
   const currentTime = Math.floor(Date.now() / 1000);
   return decoded.exp < currentTime;
