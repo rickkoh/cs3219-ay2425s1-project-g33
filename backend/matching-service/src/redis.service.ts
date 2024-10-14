@@ -22,7 +22,6 @@ export class RedisService {
     });
   }
 
-  // Add user to Redis pool
   async addUserToPool(data: MatchRequestDto): Promise<MatchResponse> {
     try {
       const payload: MatchJob = {
@@ -31,8 +30,8 @@ export class RedisService {
         selectedDifficulty: data.selectedDifficulty,
         timestamp: Date.now(),
       };
-      console.log('Adding user to pool:', payload);
 
+      // Checks if the user is already in the pool
       const existingUser = await this.getUserFromPool(data.userId);
       if (existingUser) {
         return {
@@ -54,34 +53,47 @@ export class RedisService {
     }
   }
 
-  async getUserFromPool(userId: string): Promise<boolean> {
-    const users = await this.redisPublisher.smembers('userPool');
-    return users.some((user) => JSON.parse(user).userId === userId);
-  }
+  async removeUsersFromPool(userIds: string[]): Promise<MatchResponse> {
+    try {
+      const pipeline = this.redisPublisher.pipeline();
 
-  // Get users from Redis pool
-  async getAllUsersFromPool(): Promise<MatchJob[]> {
-    const users = await this.redisPublisher.smembers('userPool');
-    return users.map((user) => JSON.parse(user));
-  }
-
-  // Remove users from Redis pool
-  async removeUsersFromPool(userIds: string[]) {
-    const users = await this.getAllUsersFromPool();
-
-    // Find and remove users whose userId matches the provided userIds
-    userIds.forEach(async (userId) => {
-      const userToRemove = users.find((user) => user.userId === userId);
-      if (userToRemove) {
-        await this.redisPublisher.srem(
-          'userPool',
-          JSON.stringify(userToRemove),
-        );
+      // Check if the pool is empty
+      const users = await this.getAllUsersFromPool();
+      if (users.length === 0) {
+        return {
+          success: false,
+          message: 'No users in the pool.',
+        };
       }
-    });
+
+      // Find users whose userId matches the provided userIds
+      const usersToRemove = users.filter((user) =>
+        userIds.includes(user.userId),
+      );
+      if (usersToRemove.length === 0) {
+        return {
+          success: false,
+          message: 'No matching users found in the pool.',
+        };
+      }
+
+      usersToRemove.forEach((user) => {
+        pipeline.srem('userPool', JSON.stringify(user));
+      });
+      await pipeline.exec();
+
+      return {
+        success: true,
+        message: `Removed ${usersToRemove.length} user(s) from the pool.`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to remove users from the pool: ${error.message}`,
+      };
+    }
   }
 
-  // Publish matched users to Redis Pub/Sub channel
   async publishMatchedUsers(matchedUserIds: string[]): Promise<void> {
     await this.redisPublisher.publish(
       'matchChannel',
@@ -94,5 +106,15 @@ export class RedisService {
       'timeoutChannel',
       JSON.stringify(timedOutUserIds),
     );
+  }
+
+  async getUserFromPool(userId: string): Promise<boolean> {
+    const user = await this.redisPublisher.hget('userPool', userId);
+    return user ? JSON.parse(user) : null;
+  }
+
+  async getAllUsersFromPool(): Promise<MatchJob[]> {
+    const users = await this.redisPublisher.smembers('userPool');
+    return users.map((user) => JSON.parse(user));
   }
 }

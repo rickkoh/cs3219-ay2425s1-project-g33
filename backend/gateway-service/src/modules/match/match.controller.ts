@@ -63,10 +63,16 @@ export class MatchGateway implements OnGatewayInit {
       !payload.selectedTopic ||
       !payload.selectedDifficulty
     ) {
-      client.emit(
-        MATCH_ERROR,
-        'Invalid match request. Please check your payload and try again.',
-      );
+      client.emit(EXCEPTION, 'Invalid match request payload.');
+      return;
+    }
+
+    // Retrieve the userId associated with the current socket
+    const storedUserId = [...this.userSockets.entries()].find(
+      ([, socketId]) => socketId === client.id,
+    )?.[0];
+    if (!storedUserId || storedUserId !== payload.userId) {
+      client.emit(EXCEPTION, 'UserId does not match the current socket.');
       return;
     }
 
@@ -80,10 +86,10 @@ export class MatchGateway implements OnGatewayInit {
           message: result.message,
         });
       } else {
-        client.emit(MATCH_ERROR, result.message);
+        client.emit(EXCEPTION, result.message);
       }
     } catch (error) {
-      client.emit(MATCH_ERROR, `Error requesting match: ${error.message}`);
+      client.emit(EXCEPTION, `Error requesting match: ${error.message}`);
       return;
     }
   }
@@ -95,24 +101,29 @@ export class MatchGateway implements OnGatewayInit {
   ) {
     if (!payload.userId) {
       client.emit(
-        MATCH_ERROR,
+        EXCEPTION,
         'Invalid userId. Please check your payload and try again.',
       );
       return;
     }
 
-    firstValueFrom(
-      this.matchingClient.send('match-cancel', { userId: payload.userId }),
-    )
-      .then(() => console.log(`Match canceled for user ${payload.userId}`))
-      .catch((error) =>
-        console.error(
-          `Error canceling match for user ${payload.userId}: ${error.message}`,
-        ),
+    try {
+      const result = await firstValueFrom(
+        this.matchingClient.send('match-cancel', { userId: payload.userId }),
       );
-    this.server.to(client.id).emit(MATCH_CANCELLED, {
-      message: `You have been cancelled from the match.`,
-    });
+
+      if (result.success) {
+        this.server.to(client.id).emit(MATCH_CANCELLED, {
+          message: result.message,
+        });
+      } else {
+        client.emit(EXCEPTION, result.message);
+      }
+    } catch (error) {
+      console.log(error);
+      client.emit(EXCEPTION, `Error canceling match: ${error.message}`);
+      return;
+    }
   }
 
   // Notify both matched users via WebSocket
@@ -148,11 +159,7 @@ export class MatchGateway implements OnGatewayInit {
     const id = client.handshake.query.userId as string;
 
     if (!id) {
-      client.emit(
-        EXCEPTION,
-        'Error connecting to /match socket: No userId provided.',
-      );
-      client.disconnect();
+      this.emitExceptionAndDisconnect(client, 'Invalid userId.');
       return;
     }
 
@@ -160,9 +167,9 @@ export class MatchGateway implements OnGatewayInit {
       // Check if user is already connected
       const existingSocketId = this.userSockets.get(id);
       if (existingSocketId) {
-        client.emit(
-          EXCEPTION,
-          'Error connecting to /match socket: User already connected.',
+        this.emitExceptionAndDisconnect(
+          client,
+          `User ${id} is already connected with socket ID ${existingSocketId}`,
         );
         return;
       }
@@ -173,11 +180,7 @@ export class MatchGateway implements OnGatewayInit {
       );
 
       if (!existingUser) {
-        client.emit(
-          EXCEPTION,
-          'Error connecting to /match socket: Invalid userId.',
-        );
-        client.disconnect();
+        this.emitExceptionAndDisconnect(client, `User ${id} not found.`);
         return;
       }
 
@@ -186,10 +189,7 @@ export class MatchGateway implements OnGatewayInit {
         console.log(`User ${id} connected with socket ID ${client.id}`);
       }
     } catch (error) {
-      client.emit(
-        EXCEPTION,
-        `Error connecting to /match socket: ${error.message}`,
-      );
+      this.emitExceptionAndDisconnect(client, error.message);
       return;
     }
   }
@@ -199,21 +199,44 @@ export class MatchGateway implements OnGatewayInit {
       ([, socketId]) => socketId === client.id,
     )?.[0];
 
-    if (userId) {
-      this.userSockets.delete(userId);
+    if (!userId) {
+      this.emitExceptionAndDisconnect(
+        client,
+        'User not found in userSockets at disconnect.',
+      );
+      return;
+    }
+
+    try {
       // Remove user from Redis pool
-      firstValueFrom(this.matchingClient.send('match-cancel', { userId }))
-        .then(() => console.log(`Match canceled for user ${userId}`))
-        .catch((error) =>
-          console.error(
-            `Error canceling match for user ${userId}: ${error.message}`,
-          ),
+      const result = await firstValueFrom(
+        this.matchingClient.send('match-cancel', { userId }),
+      );
+
+      if (result.success) {
+        console.log(`Match canceled successfully for user ${userId}`);
+      } else {
+        console.warn(
+          `Match cancellation failed for user ${userId}: ${result.message}`,
         );
-      console.log(`User ${userId} disconnected`);
+      }
+
+      this.userSockets.delete(userId);
+      console.log(`User ${userId} disconnected and removed from userSockets.`);
+    } catch (error) {
+      client.emit(
+        EXCEPTION,
+        `Error canceling match for user ${userId}: ${error.message}`,
+      );
     }
   }
 
-  getUserSocketId(userId: string): string | undefined {
+  private getUserSocketId(userId: string): string | undefined {
     return this.userSockets.get(userId);
+  }
+
+  private emitExceptionAndDisconnect(client: Socket, message: string) {
+    client.emit(EXCEPTION, `Error connecting to /match socket: ${message}`);
+    client.disconnect();
   }
 }

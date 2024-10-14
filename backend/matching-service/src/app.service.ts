@@ -13,7 +13,7 @@ export class AppService {
   }
 
   // Remove user from the Redis pool
-  async cancelMatch(userId: string): Promise<void> {
-    await this.redisService.removeUsersFromPool([userId]);
+  async cancelMatch(userId: string): Promise<MatchResponse> {
+    return this.redisService.removeUsersFromPool([userId]);
   }
 }

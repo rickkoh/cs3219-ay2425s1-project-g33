@@ -14,6 +14,6 @@ export class AppController {
 
   @MessagePattern('match-cancel')
   async handleMatchCancel(@Payload() data: { userId: string }) {
-    await this.appService.cancelMatch(data.userId);
+    return this.appService.cancelMatch(data.userId);
   }
 }
