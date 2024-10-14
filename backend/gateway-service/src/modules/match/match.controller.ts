@@ -145,7 +145,7 @@ export class MatchGateway implements OnGatewayInit {
   }
 
   async handleConnection(@ConnectedSocket() client: Socket) {
-    const id = client.handshake.query.userId;
+    const id = client.handshake.query.userId as string;
 
     if (!id) {
       client.emit(
@@ -157,6 +157,17 @@ export class MatchGateway implements OnGatewayInit {
     }
 
     try {
+      // Check if user is already connected
+      const existingSocketId = this.userSockets.get(id);
+      if (existingSocketId) {
+        client.emit(
+          EXCEPTION,
+          'Error connecting to /match socket: User already connected.',
+        );
+        return;
+      }
+
+      // Check if valid user exists in database
       const existingUser = await firstValueFrom(
         this.userClient.send({ cmd: 'get-user-by-id' }, id),
       );
