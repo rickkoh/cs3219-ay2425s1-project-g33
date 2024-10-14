@@ -8,18 +8,17 @@ import { Table } from "@tanstack/react-table";
 import { CreateQuestionModal } from "../Forms/CreateQuestionModal";
 import { QuestionTableContext } from "@/contexts/QuestionTableContext";
 import { useContext } from "react";
-import { useUser } from "@/contexts/UserContext";
-import { RoleEnum } from "@/types/Role";
 
 interface DataTableToolbarProps<TData> {
+  isAdmin: boolean;
   table: Table<TData>;
   categories?: string[];
 }
 
 export default function DataTableToolbar<TData>({
+  isAdmin,
   table,
 }: DataTableToolbarProps<TData>) {
-  const user = useUser();
   const { categories } = useContext(QuestionTableContext);
 
   return (
@@ -65,7 +64,7 @@ export default function DataTableToolbar<TData>({
             />
           </div>
           <CreateQuestionModal>
-            {user?.roles.includes(RoleEnum.enum.admin) && (
+            {isAdmin && (
               <Button variant="soft">
                 <LucidePlus className="mr-2" />
                 Create question
