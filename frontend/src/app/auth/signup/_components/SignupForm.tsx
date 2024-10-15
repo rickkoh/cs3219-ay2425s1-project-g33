@@ -78,10 +78,10 @@ export default function SignupForm() {
       }
       const accessTokenResponse = await signup(data);
       if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
-        localStorage.setItem(
-          "access_token",
-          accessTokenResponse.data.access_token
-        );
+        toast({
+          title: "Success!",
+          description: "You should be redirected to /onboard",
+        });
         router.push("/onboard");
       } else {
         toast({
