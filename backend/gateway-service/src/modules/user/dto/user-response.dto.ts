@@ -9,7 +9,4 @@ export class UsersResponseDto {
 
   @Exclude()
   socialId: string;
-
-  // @Exclude()
-  // _id: string;
 }
