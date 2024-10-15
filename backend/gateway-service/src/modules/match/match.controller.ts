@@ -23,6 +23,7 @@ import {
   MATCH_ERROR,
   EXCEPTION,
   MATCH_DECLINED,
+  CONNECTED,
 } from './match.event';
 import {
   ACCEPT_MATCH,
@@ -68,16 +69,13 @@ export class MatchGateway implements OnGatewayInit {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MatchRequestDto,
   ) {
-    if (
-      !payload.userId ||
-      !payload.selectedTopic ||
-      !payload.selectedDifficulty
-    ) {
+    const { userId, selectedTopic, selectedDifficulty } = payload;
+    if (!userId || !selectedTopic || !selectedDifficulty) {
       client.emit(MATCH_ERROR, 'Invalid match request payload.');
       return;
     }
 
-    if (!this.validateUserId(client, payload.userId)) {
+    if (!this.validateUserId(client, userId)) {
       return;
     }
 
@@ -104,18 +102,19 @@ export class MatchGateway implements OnGatewayInit {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { userId: string },
   ) {
-    if (!payload.userId) {
+    const { userId } = payload;
+    if (!userId) {
       client.emit(MATCH_ERROR, 'Invalid userId in payload.');
       return;
     }
 
-    if (!this.validateUserId(client, payload.userId)) {
+    if (!this.validateUserId(client, userId)) {
       return;
     }
 
     try {
       const result = await firstValueFrom(
-        this.matchingClient.send('match-cancel', { userId: payload.userId }),
+        this.matchingClient.send('match-cancel', { userId: userId }),
       );
 
       if (result.success) {
@@ -280,38 +279,40 @@ export class MatchGateway implements OnGatewayInit {
   }
 
   async handleConnection(@ConnectedSocket() client: Socket) {
-    const id = client.handshake.query.userId as string;
+    const userId = client.handshake.query.userId as string;
 
-    if (!id) {
+    if (!userId) {
       this.emitExceptionAndDisconnect(client, 'Invalid userId.');
       return;
     }
 
     try {
       // Check if user is already connected
-      const existingSocketId = this.userSockets.get(id);
-      if (existingSocketId) {
+      const existingSocketId = this.userSockets.get(userId);
+      if (existingSocketId && existingSocketId !== client.id) {
         this.emitExceptionAndDisconnect(
           client,
-          `User ${id} is already connected with socket ID ${existingSocketId}`,
+          `User ${userId} is already connected with socket ID ${existingSocketId}`,
         );
         return;
       }
 
       // Check if valid user exists in database
       const existingUser = await firstValueFrom(
-        this.userClient.send({ cmd: 'get-user-by-id' }, id),
+        this.userClient.send({ cmd: 'get-user-by-id' }, userId),
       );
 
       if (!existingUser) {
-        this.emitExceptionAndDisconnect(client, `User ${id} not found.`);
+        this.emitExceptionAndDisconnect(client, `User ${userId} not found.`);
         return;
       }
 
-      if (id) {
-        this.userSockets.set(id as string, client.id);
-        console.log(`User ${id} connected with socket ID ${client.id}`);
-      }
+      this.userSockets.set(userId, client.id);
+
+      client.emit(CONNECTED, {
+        message: `User ${userId} connected with socket ID ${client.id}`,
+      });
+      console.log(`User ${userId} connected with socket ID ${client.id}`);
     } catch (error) {
       this.emitExceptionAndDisconnect(client, error.message);
       return;
