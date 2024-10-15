@@ -80,13 +80,14 @@ export async function requestSSOUrl(
         headers: {
           "Content-Type": "application/json",
         },
+        redirect: "manual",
       }
     );
 
     return RequestSSOUrlResponseSchema.parse({
-      statusCode: 200,
-      message: "Url successfully fetched.",
-      data: res.url,
+      statusCode: res.status,
+      message: "SSO redirect request fetched",
+      data: res.headers.get("Location"),
     });
   } catch (error) {
     console.error(error);
