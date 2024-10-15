@@ -7,6 +7,7 @@ import {
   UserProfileResponse,
   UserProfileResponseSchema,
 } from "@/types/User";
+import { revalidateTag } from "next/cache";
 import { cache } from "react";
 
 export const getCurrentUser = cache(
@@ -24,6 +25,7 @@ export const getCurrentUser = cache(
             "Content-Type": "application/json",
             Authorization: `Bearer ${access_token}`,
           },
+          next: { tags: ["currentUser"] },
         }
       );
 
@@ -57,6 +59,8 @@ export async function editUserProfile(
     });
 
     const data = await res.json();
+
+    revalidateTag("currentUser");
 
     return UserProfileResponseSchema.parse(data);
   } catch (error) {

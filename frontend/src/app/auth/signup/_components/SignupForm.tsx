@@ -25,10 +25,15 @@ import GoogleIconSvg from "@public/assets/icons/google.svg";
 import GithubIconSvg from "@public/assets/icons/github.svg";
 import { AccountProvider, AccountProviderEnum } from "@/types/AccountProvider";
 import { Lock, Mail } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const SignupFormSchema = z
   .object({
-    email: z.string().email({ message: "Please enter a valid email." }).trim(),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email({ message: "Must be a valid email format" }),
     password: z
       .string()
       .min(8, { message: "Be at least 8 characters long" })
@@ -45,6 +50,8 @@ const SignupFormSchema = z
 export default function SignupForm() {
   const router = useRouter();
 
+  const { toast } = useToast();
+
   const [isSSORedirecting, setIsSSORedirecting] = useState<boolean>(false);
 
   const methods = useForm<z.infer<typeof SignupFormSchema>>({
@@ -58,9 +65,17 @@ export default function SignupForm() {
     async (provider: AccountProvider) => {
       setIsSSORedirecting(true);
       const resUrl = await requestSSOUrl(provider);
-      window.location.href = resUrl.data;
+      if (resUrl.data) {
+        window.location.href = resUrl.data;
+      } else {
+        toast({
+          title: "Error!",
+          description: "Social sign in error, try again later.",
+        });
+        setIsSSORedirecting(false);
+      }
     },
-    []
+    [toast]
   );
 
   const onSubmit = useCallback(
@@ -82,7 +97,10 @@ export default function SignupForm() {
         );
         router.replace("/dashboard");
       } else {
-        // TODO: Display error message
+        toast({
+          title: "Error!",
+          description: accessTokenResponse.message,
+        });
       }
     },
     [router, methods, formState.isSubmitting, isSSORedirecting]

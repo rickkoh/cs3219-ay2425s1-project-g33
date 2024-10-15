@@ -8,11 +8,15 @@ import { PropsWithChildren } from "react";
 export default async function DashboardLayout({ children }: PropsWithChildren) {
   const currentUser = await getCurrentUser();
 
+  console.log("dashboard");
+
   if (currentUser.statusCode === 401 || !currentUser.data) {
+    console.log("dashboard 401 or data not fetced");
     redirect("/auth/signin");
   }
 
   if (!currentUser.data?.isOnboarded) {
+    console.log("isOnboard false?: " + currentUser.data?.isOnboarded);
     redirect("/onboard");
   }
 
