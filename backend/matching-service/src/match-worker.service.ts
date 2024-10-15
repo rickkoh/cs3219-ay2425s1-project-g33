@@ -7,12 +7,15 @@ import { PriorityQueue } from './helper/priority-queue';
 export class MatchWorkerService {
   constructor(private readonly redisService: RedisService) {}
 
+  private INTERNAL_TIMEOUT = 300000; // 5 minutes
+  private CHECK_INTERVAL = 5000; // 5 seconds
+
   // Poll for matches at a regular interval
   async pollForMatches() {
     setInterval(async () => {
       const users = await this.redisService.getAllUsersFromPool();
       const currentTime = Date.now();
-      const timeout = 300000; // 5 minutes to remove any zombie users
+      const timeout = this.INTERNAL_TIMEOUT; // 5 minutes to remove any zombie users
       console.log('Polling', users);
       // Filter out users who have timed out
       const activeUsers = users.filter(
@@ -46,12 +49,14 @@ export class MatchWorkerService {
           bestMatch.user1.userId,
           bestMatch.user2.userId,
         ]);
+
+        console.log('Matched users', bestMatch);
       }
-    }, 5000);
+    }, this.CHECK_INTERVAL);
   }
 
   // Ranking logic for matches
-  rankUsers(
+  private rankUsers(
     users: MatchRequestDto[],
   ): { user1: MatchRequestDto; user2: MatchRequestDto; score: number }[] {
     const matches = [];
@@ -72,14 +77,13 @@ export class MatchWorkerService {
     const matchingTopics = user1.selectedTopic.filter((topic) =>
       user2.selectedTopic.includes(topic),
     );
-    score += matchingTopics.length * 3;
+    score += matchingTopics.length * 3; // Priority given to selectedTopics with higher weight
     if (user1.selectedDifficulty === user2.selectedDifficulty) {
-      score += 2;
+      score += 1;
     }
     return score;
   }
 
-  // Notify the gateway service about the match via Redis Pub/Sub
   async notifyGateway(matchedUserIds: string[]) {
     await this.redisService.publishMatchedUsers(matchedUserIds);
   }

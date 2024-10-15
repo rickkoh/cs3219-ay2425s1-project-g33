@@ -11,17 +11,25 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from './redis.service';
-import { MatchRequestDto } from './dto';
+import { v4 as uuidv4 } from 'uuid';
+import { MatchAcceptDto, MatchDeclineDto, MatchRequestDto } from './dto';
 import {
   MATCH_FOUND,
   MATCH_CANCELLED,
   MATCH_CONFIRMED,
   MATCH_TIMEOUT,
   MATCH_REQUESTED,
+  MATCH_ACCEPTED,
   MATCH_ERROR,
   EXCEPTION,
+  MATCH_DECLINED,
 } from './match.event';
-import { CANCEL_MATCH, FIND_MATCH } from './match.message';
+import {
+  ACCEPT_MATCH,
+  CANCEL_MATCH,
+  DECLINE_MATCH,
+  FIND_MATCH,
+} from './match.message';
 
 @WebSocketGateway({
   namespace: '/match',
@@ -35,6 +43,8 @@ import { CANCEL_MATCH, FIND_MATCH } from './match.message';
 export class MatchGateway implements OnGatewayInit {
   @WebSocketServer() server: Server;
   private userSockets: Map<string, string> = new Map();
+  private matchConfirmations: Map<string, Set<string>> = new Map();
+  private matchParticipants: Map<string, Set<string>> = new Map();
 
   constructor(
     @Inject('MATCHING_SERVICE') private matchingClient: ClientProxy,
@@ -63,7 +73,7 @@ export class MatchGateway implements OnGatewayInit {
       !payload.selectedTopic ||
       !payload.selectedDifficulty
     ) {
-      client.emit(EXCEPTION, 'Invalid match request payload.');
+      client.emit(MATCH_ERROR, 'Invalid match request payload.');
       return;
     }
 
@@ -81,7 +91,7 @@ export class MatchGateway implements OnGatewayInit {
           message: result.message,
         });
       } else {
-        client.emit(EXCEPTION, result.message);
+        client.emit(MATCH_ERROR, result.message);
       }
     } catch (error) {
       client.emit(EXCEPTION, `Error requesting match: ${error.message}`);
@@ -95,10 +105,7 @@ export class MatchGateway implements OnGatewayInit {
     @MessageBody() payload: { userId: string },
   ) {
     if (!payload.userId) {
-      client.emit(
-        EXCEPTION,
-        'Invalid userId. Please check your payload and try again.',
-      );
+      client.emit(MATCH_ERROR, 'Invalid userId in payload.');
       return;
     }
 
@@ -116,7 +123,7 @@ export class MatchGateway implements OnGatewayInit {
           message: result.message,
         });
       } else {
-        client.emit(EXCEPTION, result.message);
+        client.emit(MATCH_ERROR, result.message);
       }
     } catch (error) {
       console.log(error);
@@ -125,21 +132,139 @@ export class MatchGateway implements OnGatewayInit {
     }
   }
 
-  // Notify both matched users via WebSocket
+  @SubscribeMessage(ACCEPT_MATCH)
+  async handleAcceptMatch(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MatchAcceptDto,
+  ) {
+    const { userId, matchId } = payload;
+
+    if (!userId || !matchId) {
+      client.emit(MATCH_ERROR, 'Invalid payload.');
+      return;
+    }
+
+    if (!this.validateUserId(client, userId)) {
+      return;
+    }
+
+    // Validate if the matchId exists and check if the user is a valid participant
+    const participants = this.matchParticipants.get(matchId);
+    if (!participants || !participants.has(userId)) {
+      client.emit(MATCH_ERROR, 'You are not a participant of this match.');
+      return;
+    }
+
+    // Check if the user has already accepted the match
+    const confirmations = this.matchConfirmations.get(matchId) || new Set();
+    if (confirmations.has(userId)) {
+      client.emit(MATCH_ERROR, 'You have already accepted this match.');
+      return;
+    }
+
+    // Add user's confirmation for the match
+    confirmations.add(userId);
+    this.matchConfirmations.set(matchId, confirmations);
+
+    // Check if both participants have confirmed the match
+    if (confirmations.size === 2) {
+      this.notifyUsersMatchConfirmed(matchId, [...confirmations]);
+    } else {
+      client.emit(MATCH_ACCEPTED, {
+        message: 'Waiting for the other user to accept the match.',
+      });
+    }
+  }
+
+  @SubscribeMessage(DECLINE_MATCH)
+  async handleDeclineMatch(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MatchDeclineDto,
+  ) {
+    const { userId, matchId } = payload;
+
+    if (!userId || !matchId) {
+      client.emit(MATCH_ERROR, 'Invalid payload.');
+      return;
+    }
+
+    if (!this.validateUserId(client, userId)) {
+      return;
+    }
+
+    // Validate if the matchId exists and check if the user is a valid participant
+    const participants = this.matchParticipants.get(matchId);
+    if (!participants || !participants.has(userId)) {
+      client.emit(MATCH_ERROR, 'You are not a participant of this match.');
+      return;
+    }
+
+    // Notify the other user that the match has been declined
+    this.notifyOtherUserMatchDeclined(matchId, userId);
+
+    // Remove match-related data
+    this.matchParticipants.delete(matchId);
+    this.matchConfirmations.delete(matchId);
+    client.emit(MATCH_DECLINED, { message: 'You have declined the match.' });
+  }
+
+  // Notify both users when they are matched
   notifyUsersWithMatch(matchedUsers: string[]) {
     const [user1, user2] = matchedUsers;
     const user1SocketId = this.getUserSocketId(user1);
     const user2SocketId = this.getUserSocketId(user2);
+
     if (user1SocketId && user2SocketId) {
+      const matchId = this.generateMatchId();
       this.server.to(user1SocketId).emit(MATCH_FOUND, {
-        message: `You have been matched with user ${user2}`,
-        matchedUserId: user2,
+        message: `You have found a match`,
+        matchUserId: user2,
+        matchId,
       });
       this.server.to(user2SocketId).emit(MATCH_FOUND, {
-        message: `You have been matched with user ${user1}`,
-        matchedUserId: user1,
+        message: `You have found a match`,
+        matchUserId: user1,
+        matchId,
       });
+
+      // Store participants for this matchId
+      this.matchParticipants.set(matchId, new Set([user1, user2]));
     }
+  }
+
+  // Notify both users when they both accept the match
+  notifyUsersMatchConfirmed(matchId: string, users: string[]) {
+    const sessionId = this.generateSessionId();
+    users.forEach((user) => {
+      const socketId = this.getUserSocketId(user);
+      if (socketId) {
+        this.server.to(socketId).emit(MATCH_CONFIRMED, {
+          message: `Match confirmed! New session created.`,
+          sessionId,
+        });
+      }
+    });
+
+    // Clean up match participants and confirmations
+    this.matchConfirmations.delete(matchId);
+    this.matchParticipants.delete(matchId);
+  }
+
+  private notifyOtherUserMatchDeclined(
+    matchId: string,
+    decliningUserId: string,
+  ) {
+    const participants = this.matchParticipants.get(matchId);
+    participants?.forEach((participantId) => {
+      if (participantId !== decliningUserId) {
+        const socketId = this.getUserSocketId(participantId);
+        if (socketId) {
+          this.server.to(socketId).emit(MATCH_DECLINED, {
+            message: 'The other user has declined the match.',
+          });
+        }
+      }
+    });
   }
 
   notifyUsersWithTimeout(timedOutUsers: string[]) {
@@ -213,11 +338,9 @@ export class MatchGateway implements OnGatewayInit {
       );
 
       if (result.success) {
-        console.log(`Match canceled successfully for user ${userId}`);
+        console.log(`Match auto cancelled user ${userId} at disconnect`);
       } else {
-        console.warn(
-          `Match cancellation failed for user ${userId}: ${result.message}`,
-        );
+        console.log(`No match cancelled: ${result.message}`);
       }
 
       this.userSockets.delete(userId);
@@ -225,7 +348,7 @@ export class MatchGateway implements OnGatewayInit {
     } catch (error) {
       client.emit(
         EXCEPTION,
-        `Error canceling match for user ${userId}: ${error.message}`,
+        `Error disconnecting user ${userId}: ${error.message}`,
       );
     }
   }
@@ -234,8 +357,17 @@ export class MatchGateway implements OnGatewayInit {
     return this.userSockets.get(userId);
   }
 
+  private generateMatchId(): string {
+    return uuidv4();
+  }
+
+  // TODO - to be replaced with colab method in the future
+  private generateSessionId(): string {
+    return uuidv4();
+  }
+
   private emitExceptionAndDisconnect(client: Socket, message: string) {
-    client.emit(EXCEPTION, `Error connecting to /match socket: ${message}`);
+    client.emit(EXCEPTION, `Error: ${message}`);
     client.disconnect();
   }
 

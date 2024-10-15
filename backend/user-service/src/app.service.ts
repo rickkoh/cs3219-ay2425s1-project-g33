@@ -25,7 +25,7 @@ export class AppService {
 
   public async getUserById(id: string): Promise<User> {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new RpcException('Invalid _id format (Provide an ObjectId)');
+      throw new RpcException('Invalid userId format');
     }
 
     const user = await this.userModel.findById(id).exec();

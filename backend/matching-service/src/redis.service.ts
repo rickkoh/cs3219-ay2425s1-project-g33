@@ -3,7 +3,6 @@ import Redis from 'ioredis';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchJob } from './interfaces/match-job.interface';
 import { config } from 'src/configs';
-import { RpcException } from '@nestjs/microservices';
 import { MatchResponse } from './interfaces';
 
 @Injectable()
@@ -41,6 +40,7 @@ export class RedisService {
       }
 
       await this.redisPublisher.sadd('userPool', JSON.stringify(payload));
+      console.log('Added user to pool:', payload.userId);
       return {
         success: true,
         message: 'User added to pool successfully',
@@ -81,6 +81,10 @@ export class RedisService {
         pipeline.srem('userPool', JSON.stringify(user));
       });
       await pipeline.exec();
+      console.log(
+        'Removed users from pool:',
+        usersToRemove.map((user) => user.userId),
+      );
 
       return {
         success: true,
@@ -109,8 +113,8 @@ export class RedisService {
   }
 
   async getUserFromPool(userId: string): Promise<boolean> {
-    const user = await this.redisPublisher.hget('userPool', userId);
-    return user ? JSON.parse(user) : null;
+    const users = await this.redisPublisher.smembers('userPool');
+    return users.some((user) => JSON.parse(user).userId === userId);
   }
 
   async getAllUsersFromPool(): Promise<MatchJob[]> {
