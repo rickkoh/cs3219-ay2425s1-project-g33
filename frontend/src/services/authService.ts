@@ -1,11 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
-
 import {
   AccessTokenResponse,
   AccessTokenResponseSchema,
-  RefreshTokenSchema,
   TokenPairResponse,
   TokenPairResponseSchema,
 } from "@/types/Token";
@@ -20,7 +17,12 @@ import {
   LogoutResponse,
   LogoutResposeSchema,
 } from "@/types/AuthResponses";
-import { getAccessToken } from "@/lib/auth";
+import {
+  deleteAuthCookieSession,
+  getAccessToken,
+  getRefreshToken,
+  setAuthCookieSession,
+} from "@/lib/auth";
 import { AccountProvider } from "@/types/AccountProvider";
 
 export async function login(
@@ -45,18 +47,7 @@ export async function login(
     const accessTokenResponse = AccessTokenResponseSchema.parse(resObj);
 
     if (tokenPairResponse.data) {
-      const cookieStore = cookies();
-      cookieStore.set("access_token", tokenPairResponse.data.access_token, {
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
-      cookieStore.set("refresh_token", tokenPairResponse.data.refresh_token, {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
+      await setAuthCookieSession(tokenPairResponse.data);
     }
 
     return accessTokenResponse;
@@ -121,18 +112,7 @@ export async function signup(
     const accessTokenResponse = AccessTokenResponseSchema.parse(resObj);
 
     if (tokenPairResponse.data) {
-      const cookieStore = cookies();
-      cookieStore.set("access_token", tokenPairResponse.data.access_token, {
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
-      cookieStore.set("refresh_token", tokenPairResponse.data.refresh_token, {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
+      await setAuthCookieSession(tokenPairResponse.data);
     }
 
     return accessTokenResponse;
@@ -146,7 +126,7 @@ export async function signup(
 
 export async function logout(): Promise<LogoutResponse> {
   try {
-    const access_token = getAccessToken();
+    const access_token = await getAccessToken();
 
     const res: Response = await fetch(
       process.env.PUBLIC_API_URL + `/api/auth/logout`,
@@ -162,9 +142,7 @@ export async function logout(): Promise<LogoutResponse> {
 
     const resObj = await res.json();
 
-    const cookieStore = cookies();
-    cookieStore.delete("access_token");
-    cookieStore.delete("refresh_token");
+    await deleteAuthCookieSession();
 
     return LogoutResposeSchema.parse(resObj);
   } catch (error) {
@@ -177,10 +155,7 @@ export async function logout(): Promise<LogoutResponse> {
 
 export async function refreshAccessToken(): Promise<TokenPairResponse> {
   try {
-    const cookieStore = cookies();
-    const refresh_token = RefreshTokenSchema.parse(
-      cookieStore.get("refresh_token")?.value
-    );
+    const refresh_token = await getRefreshToken();
 
     const res: Response = await fetch(
       process.env.PUBLIC_API_URL + `/api/auth/refresh`,

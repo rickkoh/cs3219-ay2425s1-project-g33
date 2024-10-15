@@ -1,5 +1,6 @@
 "use server";
 
+import { getAccessToken } from "@/lib/auth";
 import { CategoriesResponse, CategoriesResponseSchema } from "@/types/Category";
 import {
   Question,
@@ -10,9 +11,7 @@ import {
   QuestionsResponseSchema,
   NewQuestionSchema,
 } from "@/types/Question";
-import { AccessTokenSchema } from "@/types/Token";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
 
 import qs from "querystring";
 import { cache } from "react";
@@ -21,10 +20,7 @@ export const getQuestion = cache(async function (
   slug: string
 ): Promise<QuestionResponse> {
   try {
-    const cookieStore = cookies();
-    const access_token = AccessTokenSchema.parse(
-      cookieStore.get("access_token")?.value
-    );
+    const access_token = await getAccessToken();
 
     const res = await fetch(
       process.env.PUBLIC_API_URL + `/api/questions/${slug}`,
@@ -55,10 +51,7 @@ export const getQuestions = cache(
     });
 
     try {
-      const cookieStore = cookies();
-      const access_token = AccessTokenSchema.parse(
-        cookieStore.get("access_token")?.value
-      );
+      const access_token = await getAccessToken();
 
       const res: Response = await fetch(
         process.env.PUBLIC_API_URL + `/api/questions?${query}`,
@@ -87,10 +80,7 @@ export const getQuestions = cache(
 export const getQuestionCategories = cache(
   async function (): Promise<CategoriesResponse> {
     try {
-      const cookieStore = cookies();
-      const access_token = AccessTokenSchema.parse(
-        cookieStore.get("access_token")?.value
-      );
+      const access_token = await getAccessToken();
 
       const res: Response = await fetch(
         process.env.PUBLIC_API_URL + `/api/questions/categories`,
@@ -120,10 +110,7 @@ export async function createQuestion(
   question: NewQuestion
 ): Promise<QuestionResponse> {
   try {
-    const cookieStore = cookies();
-    const access_token = AccessTokenSchema.parse(
-      cookieStore.get("access_token")?.value
-    );
+    const access_token = await getAccessToken();
 
     const res = await fetch(
       process.env.PUBLIC_API_URL + "/api/questions/create",
@@ -152,10 +139,7 @@ export async function createQuestion(
 
 export async function deleteQuestion(questionId: string): Promise<void> {
   try {
-    const cookieStore = cookies();
-    const access_token = AccessTokenSchema.parse(
-      cookieStore.get("access_token")?.value
-    );
+    const access_token = await getAccessToken();
 
     await fetch(process.env.PUBLIC_API_URL + `/api/questions/${questionId}`, {
       method: "DELETE",
@@ -173,10 +157,7 @@ export async function editQuestion(
   question: Question
 ): Promise<QuestionResponse> {
   try {
-    const cookieStore = cookies();
-    const access_token = AccessTokenSchema.parse(
-      cookieStore.get("access_token")?.value
-    );
+    const access_token = await getAccessToken();
 
     const updatedQuestion = NewQuestionSchema.parse(question);
     const res = await fetch(

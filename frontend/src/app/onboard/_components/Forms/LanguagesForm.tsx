@@ -13,7 +13,6 @@ import {
 import { Form } from "@/components/ui/form";
 import { useOnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
 import { useToast } from "@/hooks/use-toast";
-import { refreshAccessToken } from "@/services/authService";
 import { editUserProfile } from "@/services/userService";
 import { LanguageEnum } from "@/types/Languages";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,7 +63,7 @@ export default function LanguagesForm() {
 
       router.replace("/dashboard");
     },
-    [router, userProfile]
+    [router, userProfile, toast]
   );
 
   return (

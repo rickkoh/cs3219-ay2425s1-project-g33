@@ -103,7 +103,7 @@ export default function SignupForm() {
         });
       }
     },
-    [router, methods, formState.isSubmitting, isSSORedirecting]
+    [router, methods, formState.isSubmitting, isSSORedirecting, toast]
   );
 
   return (
