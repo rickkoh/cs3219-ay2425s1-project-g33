@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  try {
     const queryParams = request.nextUrl.searchParams;
     const accessToken = queryParams.get("accessToken");
     const refreshToken = queryParams.get("refreshToken");
@@ -22,7 +21,4 @@ export async function GET(request: NextRequest) {
     cookieStore.set("refresh_token", tokenPair.refresh_token);
 
     return NextResponse.redirect(new URL("/dashboard", request.url));
-  } catch (e) {
-    console.error(e);
-  }
 }
