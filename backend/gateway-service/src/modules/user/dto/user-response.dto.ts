@@ -1,4 +1,4 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude } from 'class-transformer';
 
 export class UsersResponseDto {
   @Exclude()
@@ -10,6 +10,6 @@ export class UsersResponseDto {
   @Exclude()
   socialId: string;
 
-  @Exclude()
-  _id: string;
+  // @Exclude()
+  // _id: string;
 }
