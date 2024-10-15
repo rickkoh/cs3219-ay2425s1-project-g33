@@ -4,6 +4,7 @@ import { OnboardMultiStepFormProvider } from "@/contexts/OnboardMultiStepFormCon
 import { UserProfileResponse } from "@/types/User";
 import { getCurrentUser } from "@/services/userService";
 import { redirect } from "next/navigation";
+import { Toaster } from "@/components/ui/toaster";
 
 export default async function OnboardLayout({
   children,
@@ -14,6 +15,10 @@ export default async function OnboardLayout({
 
   if (userProfileResponse.statusCode === 401) {
     redirect("/auth/signin");
+  }
+
+  if (userProfileResponse.data?.isOnboarded) {
+    redirect("/dashboard");
   }
 
   if (!userProfileResponse.data) {
@@ -33,6 +38,7 @@ export default async function OnboardLayout({
           </OnboardMultiStepFormProvider>
         )}
       </main>
+      <Toaster />
     </div>
   );
 }

@@ -27,8 +27,12 @@ import { AccountProvider, AccountProviderEnum } from "@/types/AccountProvider";
 import { Lock, Mail } from "lucide-react";
 
 const FormSchema = z.object({
-  email: z.string(),
-  password: z.string(),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email is required")
+    .email("Must be a valid email format"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export default function SigninForm() {
@@ -48,9 +52,17 @@ export default function SigninForm() {
     async (provider: AccountProvider) => {
       setIsSSORedirecting(true);
       const resUrl = await requestSSOUrl(provider);
-      window.location.href = resUrl.data;
+      if (resUrl.data) {
+        window.location.href = resUrl.data;
+      } else {
+        toast({
+          title: "Error!",
+          description: "Social sign in error, try again later.",
+        });
+        setIsSSORedirecting(false);
+      }
     },
-    []
+    [toast]
   );
 
   const onSubmit = useCallback(
@@ -72,7 +84,6 @@ export default function SigninForm() {
           title: "Error!",
           description: accessTokenResponse.message,
         });
-        // TODO: Display error message
       }
     },
     [router, toast, formState.isSubmitting, isSSORedirecting]

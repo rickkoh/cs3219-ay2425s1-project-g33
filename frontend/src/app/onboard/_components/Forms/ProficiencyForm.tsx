@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useOnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
+import { useToast } from "@/hooks/use-toast";
 import { editUserProfile } from "@/services/userService";
 import { ProficiencyEnum } from "@/types/Proficiency";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +26,8 @@ const FormSchema = z.object({
 });
 
 export default function ProficiencyForm() {
+  const { toast } = useToast();
+
   const { userProfile, updateUserProfile, nextStep, prevStep } =
     useOnboardMultiStepFormContext();
 
@@ -45,7 +48,7 @@ export default function ProficiencyForm() {
       const userProfileResponse = await editUserProfile(updatedUserProfile);
 
       if (userProfileResponse.statusCode !== 200) {
-        console.error(userProfileResponse.message);
+        toast({ title: "Error!", description: userProfileResponse.message });
         return;
       }
 
