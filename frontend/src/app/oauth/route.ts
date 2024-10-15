@@ -1,4 +1,3 @@
-import { setAuthCookieSession } from "@/lib/auth";
 import { TokenPair, TokenPairSchema } from "@/types/Token";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";

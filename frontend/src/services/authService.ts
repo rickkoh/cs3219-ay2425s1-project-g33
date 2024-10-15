@@ -1,11 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
-
 import {
   AccessTokenResponse,
   AccessTokenResponseSchema,
-  RefreshTokenSchema,
   TokenPairResponse,
   TokenPairResponseSchema,
 } from "@/types/Token";
