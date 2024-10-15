@@ -20,7 +20,11 @@ import {
   LogoutResponse,
   LogoutResposeSchema,
 } from "@/types/AuthResponses";
-import { getAccessToken } from "@/lib/auth";
+import {
+  deleteAuthCookieSession,
+  getAccessToken,
+  setAuthCookieSession,
+} from "@/lib/auth";
 import { AccountProvider } from "@/types/AccountProvider";
 
 export async function login(
@@ -45,18 +49,7 @@ export async function login(
     const accessTokenResponse = AccessTokenResponseSchema.parse(resObj);
 
     if (tokenPairResponse.data) {
-      const cookieStore = cookies();
-      cookieStore.set("access_token", tokenPairResponse.data.access_token, {
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
-      cookieStore.set("refresh_token", tokenPairResponse.data.refresh_token, {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
+      await setAuthCookieSession(tokenPairResponse.data);
     }
 
     return accessTokenResponse;
@@ -121,18 +114,7 @@ export async function signup(
     const accessTokenResponse = AccessTokenResponseSchema.parse(resObj);
 
     if (tokenPairResponse.data) {
-      const cookieStore = cookies();
-      cookieStore.set("access_token", tokenPairResponse.data.access_token, {
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
-      cookieStore.set("refresh_token", tokenPairResponse.data.refresh_token, {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        httpOnly: true,
-        // secure: true, // Uncomment this line when using HTTPS
-        sameSite: "strict",
-      });
+      await setAuthCookieSession(tokenPairResponse.data);
     }
 
     return accessTokenResponse;
@@ -162,9 +144,7 @@ export async function logout(): Promise<LogoutResponse> {
 
     const resObj = await res.json();
 
-    const cookieStore = cookies();
-    cookieStore.delete("access_token");
-    cookieStore.delete("refresh_token");
+    await deleteAuthCookieSession();
 
     return LogoutResposeSchema.parse(resObj);
   } catch (error) {
