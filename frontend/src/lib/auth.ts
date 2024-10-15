@@ -4,12 +4,12 @@ import {
   AccessTokenPayload,
   AccessTokenPayloadSchema,
   AccessTokenSchema,
+  RefreshToken,
   TokenPair,
 } from "@/types/Token";
 
 /**
  * This function retrieves the access token from the cookie store.
- * If the access token is expired, it will refresh the token and store the new token in the cookie store.
  *
  * @returns {Promise<AccessToken>}
  */
@@ -18,6 +18,21 @@ export async function getAccessToken(): Promise<AccessToken> {
   const cookieStore = cookies();
   const access_token = AccessTokenSchema.parse(
     cookieStore.get("access_token")?.value
+  );
+
+  return access_token;
+}
+
+/**
+ * This function retrieves the refresh token from the cookie store.
+ *
+ * @returns {Promise<RefreshToken>}
+ */
+export async function getRefreshToken(): Promise<RefreshToken> {
+  "use server";
+  const cookieStore = cookies();
+  const access_token = AccessTokenSchema.parse(
+    cookieStore.get("refresh_token")?.value
   );
 
   return access_token;

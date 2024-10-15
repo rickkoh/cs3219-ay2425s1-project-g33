@@ -26,6 +26,7 @@ export const AccessTokenPayloadSchema = z.object({
 });
 
 export type AccessToken = z.infer<typeof AccessTokenSchema>;
+export type RefreshToken = z.infer<typeof RefreshTokenSchema>;
 export type TokenPair = z.infer<typeof TokenPairSchema>;
 export type TokenPairResponse = z.infer<typeof TokenPairResponseSchema>;
 export type AccessTokenResponse = z.infer<typeof AccessTokenResponseSchema>;

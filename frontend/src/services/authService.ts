@@ -23,6 +23,7 @@ import {
 import {
   deleteAuthCookieSession,
   getAccessToken,
+  getRefreshToken,
   setAuthCookieSession,
 } from "@/lib/auth";
 import { AccountProvider } from "@/types/AccountProvider";
@@ -128,7 +129,7 @@ export async function signup(
 
 export async function logout(): Promise<LogoutResponse> {
   try {
-    const access_token = getAccessToken();
+    const access_token = await getAccessToken();
 
     const res: Response = await fetch(
       process.env.PUBLIC_API_URL + `/api/auth/logout`,
@@ -157,10 +158,7 @@ export async function logout(): Promise<LogoutResponse> {
 
 export async function refreshAccessToken(): Promise<TokenPairResponse> {
   try {
-    const cookieStore = cookies();
-    const refresh_token = RefreshTokenSchema.parse(
-      cookieStore.get("refresh_token")?.value
-    );
+    const refresh_token = await getRefreshToken();
 
     const res: Response = await fetch(
       process.env.PUBLIC_API_URL + `/api/auth/refresh`,
