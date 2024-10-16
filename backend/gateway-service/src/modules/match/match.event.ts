@@ -1,3 +1,4 @@
+export const CONNECTED = 'connected';
 export const MATCH_FOUND = 'matchFound';
 export const MATCH_REQUESTED = 'matchRequested';
 export const MATCH_CANCELLED = 'matchCancelled';
