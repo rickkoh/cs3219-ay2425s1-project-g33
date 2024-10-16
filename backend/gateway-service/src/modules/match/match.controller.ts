@@ -232,7 +232,7 @@ export class MatchGateway implements OnGatewayInit {
   }
 
   // Notify both users when they both accept the match
-  notifyUsersMatchConfirmed(matchId: string, users: string[]) {
+  private notifyUsersMatchConfirmed(matchId: string, users: string[]) {
     const sessionId = this.generateSessionId();
     users.forEach((user) => {
       const socketId = this.getUserSocketId(user);
@@ -266,7 +266,7 @@ export class MatchGateway implements OnGatewayInit {
     });
   }
 
-  notifyUsersWithTimeout(timedOutUsers: string[]) {
+  private notifyUsersWithTimeout(timedOutUsers: string[]) {
     timedOutUsers.forEach((user) => {
       const socketId = this.getUserSocketId(user);
       if (socketId) {
@@ -344,6 +344,22 @@ export class MatchGateway implements OnGatewayInit {
         console.log(`No match cancelled: ${result.message}`);
       }
 
+      // Remove user from matchParticipants and matchConfirmations
+      let matchIdToRemove: string | null = null;
+
+      this.matchParticipants.forEach((participants, matchId) => {
+        if (participants.has(userId)) {
+          this.notifyOtherUserMatchDeclined(matchId, userId);
+          matchIdToRemove = matchId;
+        }
+      });
+
+      if (matchIdToRemove) {
+        this.matchParticipants.delete(matchIdToRemove);
+        this.matchConfirmations.delete(matchIdToRemove);
+      }
+
+      // Remove user from userSockets
       this.userSockets.delete(userId);
       console.log(`User ${userId} disconnected and removed from userSockets.`);
     } catch (error) {
