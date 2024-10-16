@@ -13,6 +13,7 @@ import {
   LoginCredentials,
   SignupData,
   SignupDataSchema,
+  ForgotPasswordSchema,
 } from "@/types/AuthCredentials";
 import {
   RequestSSOUrlResponse,
@@ -199,6 +200,36 @@ export async function refreshAccessToken(): Promise<TokenPairResponse> {
     const tokenPairResponse = TokenPairResponseSchema.parse(resObj);
 
     return tokenPairResponse;
+  } catch (error) {
+    return {
+      statusCode: 500,
+      message: String(error),
+    };
+  }
+}
+
+export async function resetPassword(email: string): 
+Promise<{statusCode: number; message: string}> {
+  try {
+    const validatedData = ForgotPasswordSchema.parse({ email });
+    
+    const response = await fetch(
+      process.env.PUBLIC_API_URL + '/api/auth/reset-password',
+      {
+        cache: "no-cache",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(validatedData),
+      }
+    );
+
+    const result = await response.json();
+    return {
+      statusCode: response.status,
+      message: result.message,
+    };
   } catch (error) {
     return {
       statusCode: 500,

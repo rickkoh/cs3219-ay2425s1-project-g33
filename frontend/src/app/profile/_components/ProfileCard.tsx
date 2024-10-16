@@ -22,7 +22,7 @@ export function ProfileCard({userProfile}: ProfileCardProps) {
               languages: ["Python"],
               isOnboarded: true,
               roles: ["user"],
-              profilePictureUrl: "testlink.com",
+              //profilePictureUrl: "testlink.com",
             }}
             isHoverEnabled={false}
             className="w-16 h-16"
