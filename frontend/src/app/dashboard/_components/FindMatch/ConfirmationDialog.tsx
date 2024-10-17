@@ -15,9 +15,14 @@ import { useFindMatchContext } from "@/contexts/FindMatchContext";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Ellipsis } from "lucide-react";
-import UserAvatar from "@/components/UserAvatar";
+import { UserProfile } from "@/types/User";
+import { getInitialsFromName } from "@/lib/utils";
 
-export default function ConfirmationDialog() {
+interface ConfirmationDialogProps {
+  user: UserProfile;
+}
+
+export default function ConfirmationDialog({ user }: ConfirmationDialogProps) {
   const {
     matchFound,
     isAwaitingConfirmation,
@@ -36,22 +41,16 @@ export default function ConfirmationDialog() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex flex-row items-end justify-center w-full gap-4">
-          <UserAvatar
-            userProfile={{
-              id: "1",
-              username: "jmsandiegoo",
-              email: "test@gmail.com",
-              displayName: "Jm San Diego",
-              proficiency: "Advanced",
-              languages: ["Python"],
-              isOnboarded: true,
-              roles: ["user"],
-            }}
-          />
+          <Avatar>
+            <AvatarImage />
+            <AvatarFallback>
+              {getInitialsFromName(user.displayName)}
+            </AvatarFallback>
+          </Avatar>
           <Ellipsis />
           <Avatar>
             <AvatarImage />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarFallback>?</AvatarFallback>
           </Avatar>
         </div>
         <AlertDialogFooter>
