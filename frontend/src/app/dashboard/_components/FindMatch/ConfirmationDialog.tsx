@@ -21,8 +21,8 @@ export default function ConfirmationDialog() {
   const {
     matchFound,
     isAwaitingConfirmation,
-    handleCancelMatch,
-    handleConfirmMatch,
+    handleDeclineMatch,
+    handleAcceptMatch,
   } = useFindMatchContext();
 
   return (
@@ -38,6 +38,7 @@ export default function ConfirmationDialog() {
         <div className="flex flex-row items-end justify-center w-full gap-4">
           <UserAvatar
             userProfile={{
+              id: "1",
               username: "jmsandiegoo",
               email: "test@gmail.com",
               displayName: "Jm San Diego",
@@ -54,16 +55,16 @@ export default function ConfirmationDialog() {
           </Avatar>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancelMatch}>
-            Cancel
+          <AlertDialogCancel onClick={handleDeclineMatch}>
+            Decline
           </AlertDialogCancel>
           <AlertDialogAction
             disabled={isAwaitingConfirmation}
-            onClick={handleConfirmMatch}
+            onClick={handleAcceptMatch}
           >
             {isAwaitingConfirmation
-              ? "Awaiting confirmation from other user"
-              : "Confirm Match"}
+              ? "Waiting for other user to accept"
+              : "Accept Match"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

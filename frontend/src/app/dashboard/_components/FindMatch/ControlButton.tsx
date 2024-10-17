@@ -6,7 +6,7 @@ import { useFindMatchContext } from "@/contexts/FindMatchContext";
 import { XIcon } from "lucide-react";
 
 export default function ControlButton() {
-  const { findingMatch, handleCancelFindingMatch, setShowConfigurationPanel } =
+  const { findingMatch, handleCancelMatch, setShowConfigurationPanel } =
     useFindMatchContext();
 
   return findingMatch ? (
@@ -17,7 +17,7 @@ export default function ControlButton() {
           <LoadingSpinner />
         </span>
       </Button>
-      <Button onClick={handleCancelFindingMatch}>
+      <Button onClick={handleCancelMatch}>
         <XIcon />
       </Button>
     </div>
