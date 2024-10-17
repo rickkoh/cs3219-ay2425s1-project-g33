@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { BadgeCheck } from "lucide-react";
 
 export default function ResetPassword() {
   const router = useRouter();
@@ -16,7 +17,8 @@ export default function ResetPassword() {
   return (
     <Card className="p-2 mt-3">
       <CardHeader>
-        <CardTitle className="text-xl">All done!</CardTitle>
+        <BadgeCheck className="text-chart-difficulty-easy"/>
+        <CardTitle className="text-xl pt-2">All done!</CardTitle>
         <CardDescription className="text-card-foreground-100">
             Your password has now been reset. Please proceed to sign in.
         </CardDescription>
@@ -26,7 +28,7 @@ export default function ResetPassword() {
           <form onSubmit={methods.handleSubmit(onSubmit)}>
             <Button
               type="submit"
-              className="w-full py-2 mt-5 rounded-md bg-primary"
+              className="w-full py-2 mt-2 rounded-md bg-primary"
             >
               Sign in
             </Button>
