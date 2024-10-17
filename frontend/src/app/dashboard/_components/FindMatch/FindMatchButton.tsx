@@ -8,6 +8,7 @@ import { getQuestionCategories } from "@/services/questionService";
 import { DifficultyEnum } from "@/types/Question";
 import { getCurrentUser } from "@/services/userService";
 import { UserProfileResponse, UserProfileSchema } from "@/types/User";
+import ContinueDialog from "./ContinueDialog";
 
 export default async function FindMatchButton() {
   const user: UserProfileResponse = await getCurrentUser();
@@ -37,6 +38,7 @@ export default async function FindMatchButton() {
         difficulties={DifficultyEnum.options}
         topics={categories}
       />
+      <ContinueDialog />
       <ConfirmationDialog user={userData} />
     </FindMatchProvider>
   );

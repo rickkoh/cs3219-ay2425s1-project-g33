@@ -24,6 +24,7 @@ interface FindMatchContextProps {
   matchFound: boolean;
   isAwaitingConfirmation: boolean;
   showConfigurationPanel: boolean;
+  showContinueDialog: boolean;
   timer: number;
   difficulties: Difficulty[];
   topics: Category[];
@@ -32,6 +33,7 @@ interface FindMatchContextProps {
   handleAcceptMatch: () => void;
   handleDeclineMatch: () => void;
   setShowConfigurationPanel: (show: boolean) => void;
+  setShowContinueDialog: (show: boolean) => void;
   setDifficulty: (difficulty: Difficulty[]) => void;
   setTopics: (topics: Category[]) => void;
 }
@@ -58,6 +60,7 @@ export function FindMatchProvider({
   const [topics, setTopics] = useState<Category[]>(["Array"]);
 
   const [showConfigurationPanel, setShowConfigurationPanel] = useState(false);
+  const [showContinueDialog, setShowContinueDialog] = useState(false);
 
   const [isConnected, setIsConnected] = useState(false);
   const [findingMatch, setFindingMatch] = useState(false);
@@ -210,6 +213,19 @@ export function FindMatchProvider({
     toast,
   ]);
 
+  useEffect(() => {
+    if (findingMatch) {
+      const timer = setTimeout(() => {
+        handleCancelMatch();
+        setShowContinueDialog(true);
+      }, 30000);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [findingMatch]);
+
   // Reset state
   function reset() {
     setMatchId(undefined);
@@ -226,6 +242,7 @@ export function FindMatchProvider({
     matchFound,
     isAwaitingConfirmation,
     showConfigurationPanel,
+    showContinueDialog,
     timer,
     difficulties: difficulty,
     topics,
@@ -234,6 +251,7 @@ export function FindMatchProvider({
     handleAcceptMatch,
     handleDeclineMatch,
     setShowConfigurationPanel,
+    setShowContinueDialog,
     setDifficulty,
     setTopics,
   };
