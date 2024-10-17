@@ -8,7 +8,7 @@ import {
   Res,
   UseGuards,
   Headers,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import {
@@ -25,6 +25,7 @@ import { firstValueFrom } from 'rxjs';
 import { RtAuthGuard } from '../../common/guards';
 import { GetCurrentUserId } from 'src/common/decorators/get-current-user-id.decorator';
 import { GetCurrentUser, Public } from 'src/common/decorators';
+import { config } from 'src/common/configs';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -96,14 +97,18 @@ export class AuthController {
   @Post('validate-token')
   @ApiOkResponse({ description: 'Token is valid' })
   @ApiBadRequestResponse({ description: 'Token is invalid' })
-  async validateToken(@Headers('authorization') authHeader: string): Promise<boolean> {
+  async validateToken(
+    @Headers('authorization') authHeader: string,
+  ): Promise<boolean> {
     const [bearer, token] = authHeader?.split(' ');
 
     if (!(bearer === 'Bearer') || !token) {
       throw new BadRequestException('Token not provided');
     }
 
-    return await firstValueFrom(this.authClient.send({ cmd: 'validate-access-token' }, token));
+    return await firstValueFrom(
+      this.authClient.send({ cmd: 'validate-access-token' }, token),
+    );
   }
 
   @Post('logout')
@@ -156,7 +161,7 @@ export class AuthController {
         this.authClient.send({ cmd: 'google-auth-redirect' }, { code }),
       );
 
-    const redirectUrl = `${process.env.FRONTEND_URL}/oauth?accessToken=${accessToken}&refreshToken=${refreshToken}`;
+    const redirectUrl = `${config.frontendUrl}/oauth?accessToken=${accessToken}&refreshToken=${refreshToken}`;
     res.redirect(redirectUrl);
   }
 
@@ -181,7 +186,7 @@ export class AuthController {
         this.authClient.send({ cmd: 'github-auth-redirect' }, { code }),
       );
 
-    const redirectUrl = `${process.env.FRONTEND_URL}/oauth?accessToken=${accessToken}&refreshToken=${refreshToken}`;
+    const redirectUrl = `${config.frontendUrl}/oauth?accessToken=${accessToken}&refreshToken=${refreshToken}`;
     res.redirect(redirectUrl);
   }
 }

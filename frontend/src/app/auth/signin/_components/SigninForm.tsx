@@ -70,10 +70,6 @@ export default function SigninForm() {
       if (formState.isSubmitting || isSSORedirecting) return;
       const accessTokenResponse = await login(data);
       if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
-        localStorage.setItem(
-          "access_token",
-          accessTokenResponse.data.access_token
-        );
         toast({
           title: "Successfully Logged in!",
           description: "You should be redirect to /dashboard",

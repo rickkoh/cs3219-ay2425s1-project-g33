@@ -2,16 +2,17 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { BullModule } from '@nestjs/bull';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ClientsModule } from '@nestjs/microservices';
 import { MatchWorkerService } from './match-worker.service';
 import { RedisService } from './redis.service';
+import { config } from 'src/configs';
 
 @Module({
   imports: [
     BullModule.forRoot({
       redis: {
-        host: 'backend-redis-1',
-        port: 6379,
+        host: config.redis.host,
+        port: config.redis.port,
       },
     }),
     BullModule.registerQueue({
@@ -20,19 +21,15 @@ import { RedisService } from './redis.service';
     ClientsModule.register([
       {
         name: 'USER_SERVICE',
-        transport: Transport.TCP,
+        transport: config.userService.transport,
         options: {
-          host: 'user-service',
-          port: 3001,
+          host: config.userService.host,
+          port: config.userService.port,
         },
       },
     ]),
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    MatchWorkerService,
-    RedisService,
-  ],
+  providers: [AppService, MatchWorkerService, RedisService],
 })
 export class AppModule {}

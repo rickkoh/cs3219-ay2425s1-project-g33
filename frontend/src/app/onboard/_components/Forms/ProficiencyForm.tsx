@@ -55,7 +55,7 @@ export default function ProficiencyForm() {
       updateUserProfile(userProfileResponse.data);
       nextStep();
     },
-    [updateUserProfile, userProfile, nextStep]
+    [updateUserProfile, userProfile, nextStep, toast]
   );
 
   return (

@@ -11,14 +11,26 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from './redis.service';
-import { MatchRequestDto } from './dto';
+import { v4 as uuidv4 } from 'uuid';
+import { MatchAcceptDto, MatchDeclineDto, MatchRequestDto } from './dto';
 import {
   MATCH_FOUND,
   MATCH_CANCELLED,
   MATCH_CONFIRMED,
   MATCH_TIMEOUT,
   MATCH_REQUESTED,
+  MATCH_ACCEPTED,
+  MATCH_ERROR,
+  EXCEPTION,
+  MATCH_DECLINED,
+  CONNECTED,
 } from './match.event';
+import {
+  ACCEPT_MATCH,
+  CANCEL_MATCH,
+  DECLINE_MATCH,
+  FIND_MATCH,
+} from './match.message';
 
 @WebSocketGateway({
   namespace: '/match',
@@ -32,9 +44,12 @@ import {
 export class MatchGateway implements OnGatewayInit {
   @WebSocketServer() server: Server;
   private userSockets: Map<string, string> = new Map();
+  private matchConfirmations: Map<string, Set<string>> = new Map();
+  private matchParticipants: Map<string, Set<string>> = new Map();
 
   constructor(
     @Inject('MATCHING_SERVICE') private matchingClient: ClientProxy,
+    @Inject('USER_SERVICE') private userClient: ClientProxy,
     private redisService: RedisService,
   ) {}
 
@@ -49,72 +64,209 @@ export class MatchGateway implements OnGatewayInit {
     });
   }
 
-  @SubscribeMessage('matchRequest')
+  @SubscribeMessage(FIND_MATCH)
   async handleRequestMatch(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MatchRequestDto,
   ) {
-    const matchPayload = {
-      userId: payload.userId,
-      selectedTopic: payload.selectedTopic,
-      selectedDifficulty: payload.selectedDifficulty,
-    };
+    const { userId, selectedTopic, selectedDifficulty } = payload;
+    if (!userId || !selectedTopic || !selectedDifficulty) {
+      client.emit(MATCH_ERROR, 'Invalid match request payload.');
+      return;
+    }
 
-    // Send the match request to the microservice
+    if (!this.validateUserId(client, userId)) {
+      return;
+    }
+
     try {
-      firstValueFrom(this.matchingClient.send('match.request', matchPayload))
-        .then(() => console.log(`Match requested for user ${payload.userId}`))
-        .catch((error) =>
-          console.error(
-            `Error requesting match for user ${payload.userId}: ${error.message}`,
-          ),
-        );
-      this.server.to(client.id).emit(MATCH_REQUESTED, {
-        message: `Match request sent to the matching service.`,
-      });
+      const result = await firstValueFrom(
+        this.matchingClient.send('match-request', payload),
+      );
+
+      if (result.success) {
+        this.server.to(client.id).emit(MATCH_REQUESTED, {
+          message: result.message,
+        });
+      } else {
+        client.emit(MATCH_ERROR, result.message);
+      }
     } catch (error) {
-      client.emit('matchError', `Error requesting match: ${error.message}`);
+      client.emit(EXCEPTION, `Error requesting match: ${error.message}`);
       return;
     }
   }
 
-  @SubscribeMessage('matchCancel')
+  @SubscribeMessage(CANCEL_MATCH)
   async handleCancelMatch(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { userId: string },
   ) {
-    firstValueFrom(
-      this.matchingClient.send('match.cancel', { userId: payload.userId }),
-    )
-      .then(() => console.log(`Match canceled for user ${payload.userId}`))
-      .catch((error) =>
-        console.error(
-          `Error canceling match for user ${payload.userId}: ${error.message}`,
-        ),
+    const { userId } = payload;
+    if (!userId) {
+      client.emit(MATCH_ERROR, 'Invalid userId in payload.');
+      return;
+    }
+
+    if (!this.validateUserId(client, userId)) {
+      return;
+    }
+
+    try {
+      const result = await firstValueFrom(
+        this.matchingClient.send('match-cancel', { userId: userId }),
       );
-    this.server.to(client.id).emit(MATCH_CANCELLED, {
-      message: `You have been cancelled from the match.`,
-    });
+
+      if (result.success) {
+        this.server.to(client.id).emit(MATCH_CANCELLED, {
+          message: result.message,
+        });
+      } else {
+        client.emit(MATCH_ERROR, result.message);
+      }
+    } catch (error) {
+      console.log(error);
+      client.emit(EXCEPTION, `Error canceling match: ${error.message}`);
+      return;
+    }
   }
 
-  // Notify both matched users via WebSocket
-  notifyUsersWithMatch(matchedUsers: string[]) {
-    const [user1, user2] = matchedUsers;
-    const user1SocketId = this.getUserSocketId(user1);
-    const user2SocketId = this.getUserSocketId(user2);
-    if (user1SocketId && user2SocketId) {
-      this.server.to(user1SocketId).emit(MATCH_FOUND, {
-        message: `You have been matched with user ${user2}`,
-        matchedUserId: user2,
-      });
-      this.server.to(user2SocketId).emit(MATCH_FOUND, {
-        message: `You have been matched with user ${user1}`,
-        matchedUserId: user1,
+  @SubscribeMessage(ACCEPT_MATCH)
+  async handleAcceptMatch(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MatchAcceptDto,
+  ) {
+    const { userId, matchId } = payload;
+
+    if (!userId || !matchId) {
+      client.emit(MATCH_ERROR, 'Invalid payload.');
+      return;
+    }
+
+    if (!this.validateUserId(client, userId)) {
+      return;
+    }
+
+    // Validate if the matchId exists and check if the user is a valid participant
+    const participants = this.matchParticipants.get(matchId);
+    if (!participants || !participants.has(userId)) {
+      client.emit(MATCH_ERROR, 'You are not a participant of this match.');
+      return;
+    }
+
+    // Check if the user has already accepted the match
+    const confirmations = this.matchConfirmations.get(matchId) || new Set();
+    if (confirmations.has(userId)) {
+      client.emit(MATCH_ERROR, 'You have already accepted this match.');
+      return;
+    }
+
+    // Add user's confirmation for the match
+    confirmations.add(userId);
+    this.matchConfirmations.set(matchId, confirmations);
+
+    // Check if both participants have confirmed the match
+    if (confirmations.size === 2) {
+      this.notifyUsersMatchConfirmed(matchId, [...confirmations]);
+    } else {
+      client.emit(MATCH_ACCEPTED, {
+        message: 'Waiting for the other user to accept the match.',
       });
     }
   }
 
-  notifyUsersWithTimeout(timedOutUsers: string[]) {
+  @SubscribeMessage(DECLINE_MATCH)
+  async handleDeclineMatch(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MatchDeclineDto,
+  ) {
+    const { userId, matchId } = payload;
+
+    if (!userId || !matchId) {
+      client.emit(MATCH_ERROR, 'Invalid payload.');
+      return;
+    }
+
+    if (!this.validateUserId(client, userId)) {
+      return;
+    }
+
+    // Validate if the matchId exists and check if the user is a valid participant
+    const participants = this.matchParticipants.get(matchId);
+    if (!participants || !participants.has(userId)) {
+      client.emit(MATCH_ERROR, 'You are not a participant of this match.');
+      return;
+    }
+
+    // Notify the other user that the match has been declined
+    this.notifyOtherUserMatchDeclined(matchId, userId);
+
+    // Remove match-related data
+    this.matchParticipants.delete(matchId);
+    this.matchConfirmations.delete(matchId);
+    client.emit(MATCH_DECLINED, { message: 'You have declined the match.' });
+  }
+
+  // Notify both users when they are matched
+  notifyUsersWithMatch(matchedUsers: string[]) {
+    const [user1, user2] = matchedUsers;
+    const user1SocketId = this.getUserSocketId(user1);
+    const user2SocketId = this.getUserSocketId(user2);
+
+    if (user1SocketId && user2SocketId) {
+      const matchId = this.generateMatchId();
+      this.server.to(user1SocketId).emit(MATCH_FOUND, {
+        message: `You have found a match`,
+        matchUserId: user2,
+        matchId,
+      });
+      this.server.to(user2SocketId).emit(MATCH_FOUND, {
+        message: `You have found a match`,
+        matchUserId: user1,
+        matchId,
+      });
+
+      // Store participants for this matchId
+      this.matchParticipants.set(matchId, new Set([user1, user2]));
+    }
+  }
+
+  // Notify both users when they both accept the match
+  private notifyUsersMatchConfirmed(matchId: string, users: string[]) {
+    const sessionId = this.generateSessionId();
+    users.forEach((user) => {
+      const socketId = this.getUserSocketId(user);
+      if (socketId) {
+        this.server.to(socketId).emit(MATCH_CONFIRMED, {
+          message: `Match confirmed! New session created.`,
+          sessionId,
+        });
+      }
+    });
+
+    // Clean up match participants and confirmations
+    this.matchConfirmations.delete(matchId);
+    this.matchParticipants.delete(matchId);
+  }
+
+  private notifyOtherUserMatchDeclined(
+    matchId: string,
+    decliningUserId: string,
+  ) {
+    const participants = this.matchParticipants.get(matchId);
+    participants?.forEach((participantId) => {
+      if (participantId !== decliningUserId) {
+        const socketId = this.getUserSocketId(participantId);
+        if (socketId) {
+          this.server.to(socketId).emit(MATCH_DECLINED, {
+            message: 'The other user has declined the match.',
+          });
+        }
+      }
+    });
+  }
+
+  private notifyUsersWithTimeout(timedOutUsers: string[]) {
     timedOutUsers.forEach((user) => {
       const socketId = this.getUserSocketId(user);
       if (socketId) {
@@ -126,11 +278,44 @@ export class MatchGateway implements OnGatewayInit {
     });
   }
 
-  handleConnection(@ConnectedSocket() client: Socket) {
-    const userId = client.handshake.query.userId;
-    if (userId) {
-      this.userSockets.set(userId as string, client.id);
+  async handleConnection(@ConnectedSocket() client: Socket) {
+    const userId = client.handshake.query.userId as string;
+
+    if (!userId) {
+      this.emitExceptionAndDisconnect(client, 'Invalid userId.');
+      return;
+    }
+
+    try {
+      // Check if user is already connected
+      const existingSocketId = this.userSockets.get(userId);
+      if (existingSocketId && existingSocketId !== client.id) {
+        this.emitExceptionAndDisconnect(
+          client,
+          `User ${userId} is already connected with socket ID ${existingSocketId}`,
+        );
+        return;
+      }
+
+      // Check if valid user exists in database
+      const existingUser = await firstValueFrom(
+        this.userClient.send({ cmd: 'get-user-by-id' }, userId),
+      );
+
+      if (!existingUser) {
+        this.emitExceptionAndDisconnect(client, `User ${userId} not found.`);
+        return;
+      }
+
+      this.userSockets.set(userId, client.id);
+
+      client.emit(CONNECTED, {
+        message: `User ${userId} connected with socket ID ${client.id}`,
+      });
       console.log(`User ${userId} connected with socket ID ${client.id}`);
+    } catch (error) {
+      this.emitExceptionAndDisconnect(client, error.message);
+      return;
     }
   }
 
@@ -139,21 +324,79 @@ export class MatchGateway implements OnGatewayInit {
       ([, socketId]) => socketId === client.id,
     )?.[0];
 
-    if (userId) {
-      this.userSockets.delete(userId);
+    if (!userId) {
+      this.emitExceptionAndDisconnect(
+        client,
+        'User not found in userSockets at disconnect.',
+      );
+      return;
+    }
+
+    try {
       // Remove user from Redis pool
-      firstValueFrom(this.matchingClient.send('match.cancel', { userId }))
-        .then(() => console.log(`Match canceled for user ${userId}`))
-        .catch((error) =>
-          console.error(
-            `Error canceling match for user ${userId}: ${error.message}`,
-          ),
-        );
-      console.log(`User ${userId} disconnected`);
+      const result = await firstValueFrom(
+        this.matchingClient.send('match-cancel', { userId }),
+      );
+
+      if (result.success) {
+        console.log(`Match auto cancelled user ${userId} at disconnect`);
+      } else {
+        console.log(`No match cancelled: ${result.message}`);
+      }
+
+      // Remove user from matchParticipants and matchConfirmations
+      let matchIdToRemove: string | null = null;
+
+      this.matchParticipants.forEach((participants, matchId) => {
+        if (participants.has(userId)) {
+          this.notifyOtherUserMatchDeclined(matchId, userId);
+          matchIdToRemove = matchId;
+        }
+      });
+
+      if (matchIdToRemove) {
+        this.matchParticipants.delete(matchIdToRemove);
+        this.matchConfirmations.delete(matchIdToRemove);
+      }
+
+      // Remove user from userSockets
+      this.userSockets.delete(userId);
+      console.log(`User ${userId} disconnected and removed from userSockets.`);
+    } catch (error) {
+      client.emit(
+        EXCEPTION,
+        `Error disconnecting user ${userId}: ${error.message}`,
+      );
     }
   }
 
-  getUserSocketId(userId: string): string | undefined {
+  private getUserSocketId(userId: string): string | undefined {
     return this.userSockets.get(userId);
+  }
+
+  private generateMatchId(): string {
+    return uuidv4();
+  }
+
+  // TODO - to be replaced with colab method in the future
+  private generateSessionId(): string {
+    return uuidv4();
+  }
+
+  private emitExceptionAndDisconnect(client: Socket, message: string) {
+    client.emit(EXCEPTION, `Error: ${message}`);
+    client.disconnect();
+  }
+
+  // Method to validate the userId associated with the current socket
+  private validateUserId(client: Socket, userId: string): boolean {
+    const storedUserId = [...this.userSockets.entries()].find(
+      ([, socketId]) => socketId === client.id,
+    )?.[0];
+    if (!storedUserId || storedUserId !== userId) {
+      client.emit(EXCEPTION, 'UserId does not match the current socket.');
+      return false;
+    }
+    return true;
   }
 }

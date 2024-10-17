@@ -5,6 +5,7 @@ import { RoleEnum } from "./Role";
 import { createResponseSchema } from "./Response";
 
 const UserProfileSchema = z.object({
+  id: z.string(),
   username: z.string(),
   displayName: z.string(),
   email: z.string().email(),
@@ -15,14 +16,16 @@ const UserProfileSchema = z.object({
   //profilePictureUrl: z.string(),
 });
 
-const UpdateUserProfileSchema = UserProfileSchema.omit({ email: true, roles: true });
-//const UpdateProfileSchema = UserProfileSchema.omit({ email: true, provider: true, profilePictureUrl: true, isOnboarded: true, languages: true });
-
+const UpdateUserProfileSchema = UserProfileSchema.omit({
+  id: true,
+  email: true,
+  roles: true,
+});
 
 const UserProfileResponseSchema = createResponseSchema(UserProfileSchema);
 
 type UserProfile = z.infer<typeof UserProfileSchema>;
-type UpdateUserProfile = z.infer<typeof UpdateUserProfileSchema>
+type UpdateUserProfile = z.infer<typeof UpdateUserProfileSchema>;
 type UserProfileResponse = z.infer<typeof UserProfileResponseSchema>;
 
 export {
@@ -32,4 +35,4 @@ export {
   type UserProfile,
   type UserProfileResponse,
   type UpdateUserProfile,
-}
+};

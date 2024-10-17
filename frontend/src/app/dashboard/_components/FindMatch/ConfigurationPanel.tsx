@@ -60,7 +60,7 @@ export default function ConfigurationPanel({
     }
   };
 
-  const [collapseDifficulties, setCollapseDifficulties] = useState(true);
+  const [collapseDifficulties, setCollapseDifficulties] = useState(false);
 
   const [collapseTopics, setCollapseTopics] = useState(false);
 
