@@ -15,6 +15,8 @@ import { Category } from "@/types/Category";
 import { MatchRequest } from "@/types/Match";
 import { useToast } from "@/hooks/use-toast";
 
+import { useInterval } from "usehooks-ts";
+
 interface FindMatchContextProps {
   isConnected: boolean;
   matchId?: string;
@@ -22,6 +24,7 @@ interface FindMatchContextProps {
   matchFound: boolean;
   isAwaitingConfirmation: boolean;
   showConfigurationPanel: boolean;
+  timer: number;
   difficulties: Difficulty[];
   topics: Category[];
   handleFindMatch: () => void;
@@ -61,6 +64,15 @@ export function FindMatchProvider({
   const [matchFound, setMatchFound] = useState(false);
   const [isAwaitingConfirmation, setIsAwaitingConfirmation] = useState(false);
 
+  const [timer, setTimer] = useState(0);
+
+  useInterval(
+    () => {
+      setTimer(timer + 1);
+    },
+    findingMatch ? 1000 : null
+  );
+
   const [matchId, setMatchId] = useState<string | undefined>();
 
   const matchRequest: MatchRequest = useMemo(() => {
@@ -95,6 +107,8 @@ export function FindMatchProvider({
     }
 
     setFindingMatch(false);
+    setTimer(0);
+
     socket.emit("cancelMatch", { userId });
     socket.once("matchCancelled", () => {
       socket.disconnect();
@@ -130,6 +144,7 @@ export function FindMatchProvider({
     setFindingMatch(false);
     setMatchFound(true);
     setIsAwaitingConfirmation(false);
+    setTimer(0);
   }, []);
 
   const onMatchDeclined = useCallback(
@@ -201,6 +216,7 @@ export function FindMatchProvider({
     setFindingMatch(false);
     setMatchFound(false);
     setIsAwaitingConfirmation(false);
+    setTimer(0);
   }
 
   const providerValue: FindMatchContextProps = {
@@ -210,6 +226,7 @@ export function FindMatchProvider({
     matchFound,
     isAwaitingConfirmation,
     showConfigurationPanel,
+    timer,
     difficulties: difficulty,
     topics,
     handleFindMatch,
