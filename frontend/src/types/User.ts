@@ -13,6 +13,7 @@ const UserProfileSchema = z.object({
   proficiency: ProficiencyEnum,
   languages: z.array(LanguageEnum),
   isOnboarded: z.boolean(),
+  //profilePictureUrl: z.string(),
 });
 
 const UpdateUserProfileSchema = UserProfileSchema.omit({
