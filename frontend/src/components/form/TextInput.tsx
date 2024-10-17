@@ -8,8 +8,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { LucideProps } from "lucide-react";
-import { ComponentType, InputHTMLAttributes, RefAttributes } from "react";
-import { FieldPath, FieldValues, useFormContext } from "react-hook-form";
+import {
+  ChangeEvent,
+  ComponentType,
+  InputHTMLAttributes,
+  RefAttributes,
+  useCallback,
+} from "react";
+import {
+  ControllerRenderProps,
+  FieldPath,
+  FieldValues,
+  Path,
+  useFormContext,
+} from "react-hook-form";
 
 interface TextInputProps<TFieldValues extends FieldValues>
   extends InputHTMLAttributes<HTMLInputElement> {
@@ -23,11 +35,26 @@ export function TextInput<TFieldValues extends FieldValues>({
   name,
   placeholder,
   className,
+  onChange,
   type = "text",
   Icon,
   ...props
 }: TextInputProps<TFieldValues>) {
   const form = useFormContext();
+
+  const handleOnChange = useCallback(
+    (
+      e: ChangeEvent<HTMLInputElement>,
+      field: ControllerRenderProps<FieldValues, Path<TFieldValues>>
+    ) => {
+      if (onChange) {
+        onChange(e);
+      } else {
+        field.onChange(e);
+      }
+    },
+    [onChange]
+  );
 
   return (
     <FormField
@@ -47,6 +74,7 @@ export function TextInput<TFieldValues extends FieldValues>({
                   placeholder={placeholder}
                   type={type}
                   {...field}
+                  onChange={(e) => handleOnChange(e, field)}
                   {...props}
                   style={{}}
                 />
@@ -57,6 +85,7 @@ export function TextInput<TFieldValues extends FieldValues>({
                 placeholder={placeholder}
                 type={type}
                 {...field}
+                onChange={(e) => handleOnChange(e, field)}
                 {...props}
               />
             )}

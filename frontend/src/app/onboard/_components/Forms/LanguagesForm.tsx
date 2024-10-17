@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useOnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
-import { refreshAccessToken } from "@/services/authService";
+import { useToast } from "@/hooks/use-toast";
 import { editUserProfile } from "@/services/userService";
 import { LanguageEnum } from "@/types/Languages";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,12 +23,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const FormSchema = z.object({
-  languages: z.array(LanguageEnum),
+  languages: z.array(LanguageEnum).min(1, "At least 1 language is required"),
   isOnboarded: z.boolean(),
 });
 
 export default function LanguagesForm() {
   const router = useRouter();
+
+  const { toast } = useToast();
 
   const { userProfile, prevStep } = useOnboardMultiStepFormContext();
 
@@ -50,24 +52,18 @@ export default function LanguagesForm() {
       const userProfileResponse = await editUserProfile(updatedUserProfile);
 
       if (userProfileResponse.statusCode !== 200) {
-        console.error(userProfileResponse.message);
+        toast({ title: "Error!", description: userProfileResponse.message });
         return;
       }
 
-      const accessTokenResponse = await refreshAccessToken();
+      toast({
+        title: "Sucessfully Onboarded!",
+        description: "Redirecting to /dashboard",
+      });
 
-      if (accessTokenResponse.statusCode === 200 && accessTokenResponse.data) {
-        localStorage.setItem(
-          "access_token",
-          accessTokenResponse.data.access_token
-        );
-
-        router.replace("/dashboard");
-      } else {
-        // TODO: Display error message
-      }
+      router.replace("/dashboard");
     },
-    [router, userProfile]
+    [router, userProfile, toast]
   );
 
   return (

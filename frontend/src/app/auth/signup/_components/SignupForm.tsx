@@ -29,7 +29,11 @@ import { useToast } from "@/hooks/use-toast";
 
 const SignupFormSchema = z
   .object({
-    email: z.string().email({ message: "Please enter a valid email." }).trim(),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email({ message: "Must be a valid email format" }),
     password: z
       .string()
       .min(8, { message: "Be at least 8 characters long" })
@@ -61,9 +65,17 @@ export default function SignupForm() {
     async (provider: AccountProvider) => {
       setIsSSORedirecting(true);
       const resUrl = await requestSSOUrl(provider);
-      window.location.href = resUrl.data;
+      if (resUrl.data) {
+        window.location.href = resUrl.data;
+      } else {
+        toast({
+          title: "Error!",
+          description: "Social sign in error, try again later.",
+        });
+        setIsSSORedirecting(false);
+      }
     },
-    []
+    [toast]
   );
 
   const onSubmit = useCallback(
@@ -90,7 +102,7 @@ export default function SignupForm() {
         });
       }
     },
-    [router, methods, formState.isSubmitting, isSSORedirecting]
+    [router, methods, formState.isSubmitting, isSSORedirecting, toast]
   );
 
   return (
