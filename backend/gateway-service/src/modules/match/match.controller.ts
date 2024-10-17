@@ -204,26 +204,39 @@ export class MatchGateway implements OnGatewayInit {
     // Remove match-related data
     this.matchParticipants.delete(matchId);
     this.matchConfirmations.delete(matchId);
-    client.emit(MATCH_DECLINED, { message: 'You have declined the match.' });
+    client.emit(MATCH_DECLINED, {
+      message: 'You have declined the match.',
+      isDecliningUser: true,
+    });
   }
 
   // Notify both users when they are matched
-  notifyUsersWithMatch(matchedUsers: string[]) {
+  async notifyUsersWithMatch(matchedUsers: string[]) {
     const [user1, user2] = matchedUsers;
     const user1SocketId = this.getUserSocketId(user1);
     const user2SocketId = this.getUserSocketId(user2);
+
+    const user1Details = await firstValueFrom(
+      this.userClient.send({ cmd: 'get-user-by-id' }, user1),
+    );
+
+    const user2Details = await firstValueFrom(
+      this.userClient.send({ cmd: 'get-user-by-id' }, user2),
+    );
 
     if (user1SocketId && user2SocketId) {
       const matchId = this.generateMatchId();
       this.server.to(user1SocketId).emit(MATCH_FOUND, {
         message: `You have found a match`,
-        matchUserId: user2,
         matchId,
+        matchUserId: user2,
+        matchUsername: user2Details.username,
       });
       this.server.to(user2SocketId).emit(MATCH_FOUND, {
         message: `You have found a match`,
-        matchUserId: user1,
         matchId,
+        matchUserId: user1,
+        matchUsername: user1Details.username,
       });
 
       // Store participants for this matchId
@@ -260,6 +273,7 @@ export class MatchGateway implements OnGatewayInit {
         if (socketId) {
           this.server.to(socketId).emit(MATCH_DECLINED, {
             message: 'The other user has declined the match.',
+            isDecliningUser: false,
           });
         }
       }
