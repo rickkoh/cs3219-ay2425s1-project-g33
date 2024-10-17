@@ -16,6 +16,7 @@ const UserProfileSchema = z.object({
 });
 
 const UpdateUserProfileSchema = UserProfileSchema.omit({
+  id: true,
   email: true,
   roles: true,
 });
