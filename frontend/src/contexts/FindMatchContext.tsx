@@ -14,11 +14,10 @@ import { Difficulty, DifficultyEnum } from "@/types/Question";
 import { Category } from "@/types/Category";
 import { MatchRequest } from "@/types/Match";
 import { useToast } from "@/hooks/use-toast";
-import { ZodAny } from "zod";
 
 interface FindMatchContextProps {
   isConnected: boolean;
-  match?: string;
+  matchId?: string;
   findingMatch: boolean;
   matchFound: boolean;
   isAwaitingConfirmation: boolean;
@@ -53,12 +52,11 @@ export function FindMatchProvider({
   const [difficulty, setDifficulty] = useState<Difficulty[]>([
     DifficultyEnum.enum.Medium,
   ]);
+  const [topics, setTopics] = useState<Category[]>(["Array"]);
 
   const [showConfigurationPanel, setShowConfigurationPanel] = useState(false);
 
-  const [topics, setTopics] = useState<Category[]>(["Array"]);
   const [isConnected, setIsConnected] = useState(false);
-
   const [findingMatch, setFindingMatch] = useState(false);
   const [matchFound, setMatchFound] = useState(false);
   const [isAwaitingConfirmation, setIsAwaitingConfirmation] = useState(false);
@@ -73,15 +71,15 @@ export function FindMatchProvider({
     };
   }, [userId, difficulty, topics]);
 
-  const [socket] = useState(
-    io(socketUrl, {
+  const socket = useMemo(() => {
+    return io(socketUrl, {
       autoConnect: false,
       reconnection: false,
       query: {
         userId: userId,
       },
-    })
-  );
+    });
+  }, [socketUrl, userId]);
 
   const handleFindMatch = useCallback(() => {
     socket.connect();
@@ -158,6 +156,16 @@ export function FindMatchProvider({
     []
   );
 
+  const handleError = useCallback(
+    (error: string) => {
+      toast({
+        title: "Error",
+        description: error,
+      });
+    },
+    [toast]
+  );
+
   useEffect(() => {
     socket.on("connect", () => {
       setIsConnected(true);
@@ -167,37 +175,25 @@ export function FindMatchProvider({
     socket.on("matchDeclined", onMatchDeclined);
     socket.on("matchConfirmed", onMatchConfirmed);
 
-    socket.on("matchError", (error) => {
-      toast({
-        title: "Error",
-        description: error,
-      });
-      console.error("Connection error:", error);
-    });
-
-    socket.on("exception", (error) => {
-      toast({
-        title: "Error",
-        description: error,
-      });
-      console.error("Connection error:", error);
-    });
+    socket.on("matchError", handleError);
+    socket.on("exception", handleError);
 
     socket.on("disconnect", () => {
       setIsConnected(false);
       reset();
     });
     return () => {
-      socket.off("connect");
-      socket.off("matchFound");
-      socket.off("matchDeclined");
-      socket.off("matchConfirmed");
-      socket.off("matchError");
-      socket.off("exception");
-      socket.off("disconnect");
+      socket.removeAllListeners();
       socket.disconnect();
     };
-  }, [socket, onMatchFound, onMatchDeclined, onMatchConfirmed, toast]);
+  }, [
+    socket,
+    onMatchFound,
+    onMatchDeclined,
+    onMatchConfirmed,
+    handleError,
+    toast,
+  ]);
 
   // Reset state
   function reset() {
@@ -209,7 +205,7 @@ export function FindMatchProvider({
 
   const providerValue: FindMatchContextProps = {
     isConnected,
-    match: matchId,
+    matchId,
     findingMatch,
     matchFound,
     isAwaitingConfirmation,
