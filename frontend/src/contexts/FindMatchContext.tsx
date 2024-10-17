@@ -1,9 +1,20 @@
 "use client";
 
-import { PropsWithChildren, createContext, useState, useContext } from "react";
-import { io, Socket } from "socket.io-client";
+import {
+  PropsWithChildren,
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
+import { io } from "socket.io-client";
 import { Difficulty, DifficultyEnum } from "@/types/Question";
 import { Category } from "@/types/Category";
+import { MatchRequest } from "@/types/Match";
+import { useToast } from "@/hooks/use-toast";
+import { ZodAny } from "zod";
 
 interface FindMatchContextProps {
   isConnected: boolean;
@@ -15,145 +26,180 @@ interface FindMatchContextProps {
   difficulties: Difficulty[];
   topics: Category[];
   handleFindMatch: () => void;
-  handleCancelFindingMatch: () => void;
-  handleConfirmMatch: () => void;
   handleCancelMatch: () => void;
+  handleAcceptMatch: () => void;
+  handleDeclineMatch: () => void;
   setShowConfigurationPanel: (show: boolean) => void;
   setDifficulty: (difficulty: Difficulty[]) => void;
   setTopics: (topics: Category[]) => void;
-  simulateMatchFound: () => void;
-  simulateMatchCancelled: () => void;
-  simulateMatchConfirmed: () => void;
+}
+
+interface FindMatchProviderProps {
+  socketUrl: string;
+  userId: string;
 }
 
 const MatchContext = createContext<FindMatchContextProps | undefined>(
   undefined
 );
 
-export function FindMatchProvider({ children }: PropsWithChildren) {
+export function FindMatchProvider({
+  socketUrl,
+  userId,
+  children,
+}: PropsWithChildren<FindMatchProviderProps>) {
+  const { toast } = useToast();
+
   const [difficulty, setDifficulty] = useState<Difficulty[]>([
     DifficultyEnum.enum.Medium,
   ]);
 
   const [showConfigurationPanel, setShowConfigurationPanel] = useState(false);
 
-  const [topics, setTopics] = useState<Category[]>([]);
+  const [topics, setTopics] = useState<Category[]>(["Array"]);
   const [isConnected, setIsConnected] = useState(false);
 
   const [findingMatch, setFindingMatch] = useState(false);
   const [matchFound, setMatchFound] = useState(false);
   const [isAwaitingConfirmation, setIsAwaitingConfirmation] = useState(false);
 
-  const [match, setMatch] = useState<string | undefined>();
-  const [socket, setSocket] = useState<Socket | undefined>();
+  const [matchId, setMatchId] = useState<string | undefined>();
 
-  function onConnect() {
-    setIsConnected(true);
-  }
+  const matchRequest: MatchRequest = useMemo(() => {
+    return {
+      userId: userId,
+      selectedDifficulty: difficulty[0],
+      selectedTopic: topics,
+    };
+  }, [userId, difficulty, topics]);
 
-  function onDisconnect() {
-    setIsConnected(false);
-  }
+  const [socket] = useState(
+    io(socketUrl, {
+      autoConnect: false,
+      reconnection: false,
+      query: {
+        userId: userId,
+      },
+    })
+  );
 
-  function onMatchFound({ matchInfo }: { matchInfo: string }) {
-    setMatch(matchInfo);
+  const handleFindMatch = useCallback(() => {
+    socket.connect();
+    socket.on("connected", () => {
+      socket.emit("findMatch", matchRequest);
+    });
+    setFindingMatch(true);
+  }, [socket, matchRequest]);
+
+  const handleCancelMatch = useCallback(() => {
+    if (!socket.connected) {
+      return;
+    }
+
+    setFindingMatch(false);
+    socket.emit("cancelMatch", { userId });
+    socket.on("matchCancelled", () => {
+      socket.disconnect();
+    });
+    reset();
+  }, [socket, userId]);
+
+  const handleAcceptMatch = useCallback(() => {
+    setTimeout(() => {
+      socket.emit("acceptMatch", { userId, matchId });
+    }, 500);
+    setIsAwaitingConfirmation(true);
+  }, [socket, userId, matchId]);
+
+  const handleDeclineMatch = useCallback(() => {
+    socket.emit("declineMatch", { userId, matchId });
+    socket.on("matchDeclined", () => {
+      socket.disconnect();
+      reset();
+    });
+  }, [socket, userId, matchId]);
+
+  const onMatchFound = useCallback(({ matchId }: { matchId: string }) => {
+    setMatchId(matchId);
     setFindingMatch(false);
     setMatchFound(true);
     setIsAwaitingConfirmation(false);
-  }
+  }, []);
 
-  function onMatchConfirmed({ matchInfo }: { matchInfo: string }) {
-    // Redirect to match session
-    console.log("Redirect to:", matchInfo);
+  const onMatchDeclined = useCallback(
+    ({ message }: { message: string }) => {
+      if (!socket || !socket.connected) {
+        return;
+      }
+      console.log("Declining match");
+      // Return user back to the pool
+      if (message.substring(0, 3) == "The") {
+        setMatchId(undefined);
+        setMatchFound(false);
+        setFindingMatch(true);
+        socket.emit("findMatch", matchRequest);
+      }
+    },
+    [socket, matchRequest]
+  );
+
+  const onMatchConfirmed = useCallback((ob: ZodAny) => {
+    console.log("Redirect to:", ob);
     reset();
-  }
+  }, []);
 
-  function onMatchCancelled() {
-    setMatchFound(false);
-    setFindingMatch(true);
-  }
+  useEffect(() => {
+    socket.on("connect", () => {
+      setIsConnected(true);
+    });
 
-  function handleFindMatch() {
-    connectToSocket();
-    setFindingMatch(true);
-  }
+    socket.on("matchFound", onMatchFound);
+    socket.on("matchDeclined", onMatchDeclined);
+    socket.on("matchConfirmed", onMatchConfirmed);
 
-  function handleCancelFindingMatch() {
-    if (!socket) return;
-    socket.emit("cancelFindingMatch");
-    disconnectFromSocket();
-    reset();
-  }
+    socket.on("matchError", (error) => {
+      toast({
+        title: "Error",
+        description: error,
+      });
+      console.error("Connection error:", error);
+    });
 
-  function handleConfirmMatch() {
-    if (!socket) return;
-    socket.emit("confirmMatch");
-    setIsAwaitingConfirmation(true);
-    setTimeout(() => {
-      simulateMatchConfirmed();
-    }, 2000);
-  }
+    socket.on("exception", (error) => {
+      toast({
+        title: "Error",
+        description: error,
+      });
+      console.error("Connection error:", error);
+    });
 
-  function handleCancelMatch() {
-    if (!socket) return;
-    socket.emit("cancelMatch");
-    disconnectFromSocket();
-    reset();
-  }
+    socket.on("disconnect", () => {
+      setIsConnected(false);
+      reset();
+    });
+    return () => {
+      socket.off("connect");
+      socket.off("matchFound");
+      socket.off("matchDeclined");
+      socket.off("matchConfirmed");
+      socket.off("matchError");
+      socket.off("exception");
+      socket.off("disconnect");
+      socket.disconnect();
+    };
+  }, [socket, onMatchFound, onMatchDeclined, onMatchConfirmed, toast]);
 
-  function connectToSocket() {
-    const newSocket = io("http://localhost:4000/match");
-
-    newSocket.on("connect", onConnect);
-    newSocket.on("disconnect", onDisconnect);
-    newSocket.on("matchFound", onMatchFound);
-    newSocket.on("matchCancelled", onMatchCancelled);
-    newSocket.on("matchConfirmed", onMatchConfirmed);
-
-    setSocket(newSocket);
-  }
-
-  function disconnectFromSocket() {
-    if (!socket) return;
-
-    socket.off("connect", onConnect);
-    socket.off("matchFound", onMatchFound);
-    socket.off("matchCancelled", onMatchCancelled);
-    socket.off("matchConfirmed", onMatchConfirmed);
-    socket.off("disconnect", onDisconnect);
-    socket.disconnect();
-
-    setSocket(undefined);
-  }
-
+  // Reset state
   function reset() {
-    setMatch(undefined);
+    setMatchId(undefined);
     setFindingMatch(false);
     setMatchFound(false);
     setIsAwaitingConfirmation(false);
-  }
-
-  /**
-   * To be removed once the socket is implemented
-   */
-  function simulateMatchFound() {
-    onMatchFound({ matchInfo: "Matched user" });
-    setTimeout(() => {
-      simulateMatchCancelled();
-    }, 8000);
-  }
-
-  function simulateMatchCancelled() {
-    onMatchCancelled();
-  }
-
-  function simulateMatchConfirmed() {
-    onMatchConfirmed({ matchInfo: "id" });
   }
 
   const providerValue: FindMatchContextProps = {
     isConnected,
-    match,
+    match: matchId,
     findingMatch,
     matchFound,
     isAwaitingConfirmation,
@@ -161,15 +207,12 @@ export function FindMatchProvider({ children }: PropsWithChildren) {
     difficulties: difficulty,
     topics,
     handleFindMatch,
-    handleCancelFindingMatch,
-    handleConfirmMatch,
     handleCancelMatch,
+    handleAcceptMatch,
+    handleDeclineMatch,
     setShowConfigurationPanel,
     setDifficulty,
     setTopics,
-    simulateMatchFound,
-    simulateMatchCancelled,
-    simulateMatchConfirmed,
   };
 
   return (
