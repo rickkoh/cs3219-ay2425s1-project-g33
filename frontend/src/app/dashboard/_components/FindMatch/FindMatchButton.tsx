@@ -37,7 +37,7 @@ export default async function FindMatchButton() {
         difficulties={DifficultyEnum.options}
         topics={categories}
       />
-      <ConfirmationDialog />
+      <ConfirmationDialog user={userData} />
     </FindMatchProvider>
   );
 }
