@@ -85,7 +85,7 @@ export function FindMatchProvider({
 
   const handleFindMatch = useCallback(() => {
     socket.connect();
-    socket.on("connected", () => {
+    socket.once("connected", () => {
       socket.emit("findMatch", matchRequest);
     });
     setFindingMatch(true);
@@ -98,13 +98,17 @@ export function FindMatchProvider({
 
     setFindingMatch(false);
     socket.emit("cancelMatch", { userId });
-    socket.on("matchCancelled", () => {
+    socket.once("matchCancelled", () => {
       socket.disconnect();
     });
     reset();
   }, [socket, userId]);
 
   const handleAcceptMatch = useCallback(() => {
+    if (!socket.connected) {
+      return;
+    }
+
     setTimeout(() => {
       socket.emit("acceptMatch", { userId, matchId });
     }, 500);
@@ -112,8 +116,12 @@ export function FindMatchProvider({
   }, [socket, userId, matchId]);
 
   const handleDeclineMatch = useCallback(() => {
+    if (!socket.connected) {
+      return;
+    }
+
     socket.emit("declineMatch", { userId, matchId });
-    socket.on("matchDeclined", () => {
+    socket.once("matchDeclined", () => {
       socket.disconnect();
       reset();
     });
@@ -131,7 +139,6 @@ export function FindMatchProvider({
       if (!socket || !socket.connected) {
         return;
       }
-      console.log("Declining match");
       // Return user back to the pool
       if (message.substring(0, 3) == "The") {
         setMatchId(undefined);
@@ -143,10 +150,13 @@ export function FindMatchProvider({
     [socket, matchRequest]
   );
 
-  const onMatchConfirmed = useCallback((ob: ZodAny) => {
-    console.log("Redirect to:", ob);
-    reset();
-  }, []);
+  const onMatchConfirmed = useCallback(
+    ({ message, sessionId }: { message: string; sessionId: string }) => {
+      console.log("Redirect to:", sessionId, message);
+      reset();
+    },
+    []
+  );
 
   useEffect(() => {
     socket.on("connect", () => {
