@@ -84,6 +84,7 @@ export default function ConfigurationPanel({
         <div className="flex flex-col gap-4">
           <Button
             onClick={() => setCollapseDifficulties(!collapseDifficulties)}
+            variant={collapseDifficulties ? "soft" : "outline"}
           >
             <div className="flex flex-row justify-between w-full">
               <span>Select difficulties</span>
@@ -143,7 +144,10 @@ export default function ConfigurationPanel({
               </div>
             ))}
           </div>
-          <Button onClick={() => setCollapseTopics(!collapseTopics)}>
+          <Button
+            onClick={() => setCollapseTopics(!collapseTopics)}
+            variant={collapseTopics ? "soft" : "outline"}
+          >
             <div className="flex flex-row items-center justify-between w-full">
               <span>Select topics</span>
               <CaretDownIcon
