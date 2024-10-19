@@ -146,25 +146,37 @@ export function FindMatchProvider({
     });
   }, [socket, userId, matchId]);
 
-  const onMatchFound = useCallback(({ matchId, matchUsername }: { matchId: string, matchUsername: string }) => {
-    setMatchId(matchId);
-    setMatchUsername(matchUsername);
-    setFindingMatch(false);
-    setMatchFound(true);
-    setIsAwaitingConfirmation(false);
-    setTimer(0);
-  }, []);
+  const onMatchFound = useCallback(
+    ({
+      matchId,
+      matchUsername,
+    }: {
+      matchId: string;
+      matchUsername: string;
+    }) => {
+      setMatchId(matchId);
+      setMatchUsername(matchUsername);
+      setFindingMatch(false);
+      setMatchFound(true);
+      setIsAwaitingConfirmation(false);
+      setTimer(0);
+    },
+    []
+  );
 
   const onMatchDeclined = useCallback(
     ({ message }: { message: string }) => {
       if (!socket || !socket.connected) {
         return;
       }
-    
-      toast({ title: "Match Declined", description: "The match has been declined. You have not been matched at this time." });
 
       // Return user back to the pool
       if (message.substring(0, 3) == "The") {
+        toast({
+          title: "Match Declined",
+          description:
+            "You will be returned to the pool to find another match.",
+        });
         setMatchId(undefined);
         setMatchFound(false);
         setFindingMatch(true);
