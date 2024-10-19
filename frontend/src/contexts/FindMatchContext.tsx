@@ -20,6 +20,7 @@ import { useInterval } from "usehooks-ts";
 interface FindMatchContextProps {
   isConnected: boolean;
   matchId?: string;
+  matchUsername?: string;
   findingMatch: boolean;
   matchFound: boolean;
   isAwaitingConfirmation: boolean;
@@ -77,6 +78,8 @@ export function FindMatchProvider({
   );
 
   const [matchId, setMatchId] = useState<string | undefined>();
+
+  const [matchUsername, setMatchUsername] = useState<string | undefined>();
 
   const matchRequest: MatchRequest = useMemo(() => {
     return {
@@ -136,34 +139,51 @@ export function FindMatchProvider({
     }
 
     socket.emit("declineMatch", { userId, matchId });
+
     socket.once("matchDeclined", () => {
       socket.disconnect();
       reset();
     });
   }, [socket, userId, matchId]);
 
-  const onMatchFound = useCallback(({ matchId }: { matchId: string }) => {
-    setMatchId(matchId);
-    setFindingMatch(false);
-    setMatchFound(true);
-    setIsAwaitingConfirmation(false);
-    setTimer(0);
-  }, []);
+  const onMatchFound = useCallback(
+    ({
+      matchId,
+      matchUsername,
+    }: {
+      matchId: string;
+      matchUsername: string;
+    }) => {
+      setMatchId(matchId);
+      setMatchUsername(matchUsername);
+      setFindingMatch(false);
+      setMatchFound(true);
+      setIsAwaitingConfirmation(false);
+      setTimer(0);
+    },
+    []
+  );
 
   const onMatchDeclined = useCallback(
     ({ message }: { message: string }) => {
       if (!socket || !socket.connected) {
         return;
       }
+
       // Return user back to the pool
       if (message.substring(0, 3) == "The") {
+        toast({
+          title: "Match Declined",
+          description:
+            "You will be returned to the pool to find another match.",
+        });
         setMatchId(undefined);
         setMatchFound(false);
         setFindingMatch(true);
         socket.emit("findMatch", matchRequest);
       }
     },
-    [socket, matchRequest]
+    [socket, matchRequest, toast]
   );
 
   const onMatchConfirmed = useCallback(
@@ -238,6 +258,7 @@ export function FindMatchProvider({
   const providerValue: FindMatchContextProps = {
     isConnected,
     matchId,
+    matchUsername,
     findingMatch,
     matchFound,
     isAwaitingConfirmation,

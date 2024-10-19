@@ -22,16 +22,18 @@ import { useEffect } from "react";
 
 interface ConfirmationDialogProps {
   user: UserProfile;
+
 }
 
 export default function ConfirmationDialog({ user }: ConfirmationDialogProps) {
   const {
     matchFound,
+    matchUsername,
     isAwaitingConfirmation,
     handleDeclineMatch,
     handleAcceptMatch,
   } = useFindMatchContext();
-
+  
   const [counter, { startCountdown, stopCountdown, resetCountdown }] =
     useCountdown({
       countStart: 10,
@@ -77,7 +79,9 @@ export default function ConfirmationDialog({ user }: ConfirmationDialogProps) {
           <Ellipsis />
           <Avatar>
             <AvatarImage />
-            <AvatarFallback>?</AvatarFallback>
+            <AvatarFallback>
+              {matchUsername ? getInitialsFromName(matchUsername) : "?"}
+            </AvatarFallback>
           </Avatar>
         </div>
         <AlertDialogFooter>
