@@ -103,8 +103,10 @@ export function FindMatchProvider({
     socket.connect();
     socket.once("connected", () => {
       socket.emit("findMatch", matchRequest);
+      socket.once("matchRequested", () => {
+        setFindingMatch(true);
+      });
     });
-    setFindingMatch(true);
   }, [socket, matchRequest]);
 
   const handleCancelMatch = useCallback(() => {
@@ -204,8 +206,9 @@ export function FindMatchProvider({
         title: "Error",
         description: error,
       });
+      socket.disconnect();
     },
-    [toast]
+    [socket, toast]
   );
 
   useEffect(() => {
