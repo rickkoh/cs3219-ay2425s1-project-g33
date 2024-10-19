@@ -1,4 +1,4 @@
-import { Exclude } from 'class-transformer';
+import { Exclude, Expose, Transform } from 'class-transformer';
 
 export class UsersResponseDto {
   @Exclude()

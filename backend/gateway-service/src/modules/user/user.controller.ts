@@ -44,7 +44,7 @@ export class UserController {
       this.userClient.send({ cmd: 'get-user-by-id' }, userId),
     );
     const { _id, ...userDetails } = user;
-    return plainToInstance(UsersResponseDto, { id: user._id, ...userDetails });
+    return plainToInstance(UsersResponseDto, { id: _id, ...userDetails });
   }
 
   @Patch('profile')
@@ -57,7 +57,11 @@ export class UserController {
     const updatedUser = await firstValueFrom(
       this.userClient.send({ cmd: 'update-user-profile' }, payload),
     );
-    return plainToInstance(UsersResponseDto, updatedUser);
+    const { _id, ...userDetails } = updatedUser;
+    return plainToInstance(UsersResponseDto, {
+      id: _id,
+      ...userDetails,
+    });
   }
 
   @Patch(':id/assign-admin')
