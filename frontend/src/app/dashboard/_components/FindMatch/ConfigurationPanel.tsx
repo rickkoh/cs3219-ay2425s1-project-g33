@@ -85,7 +85,7 @@ export default function ConfigurationPanel({
             variant={collapseDifficulties ? "soft" : "outline"}
           >
             <div className="flex flex-row justify-between w-full">
-              <span>Select difficulties</span>
+              <span>Select difficulty</span>
               <CaretDownIcon
                 className={cn(
                   "w-6 h-6",
@@ -127,7 +127,6 @@ export default function ConfigurationPanel({
               </div>
             ))}
           </RadioGroup>
-
 
           </div>
           <Button
