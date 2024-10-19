@@ -1,10 +1,15 @@
-import ResetPassword from "../reset-password/_components/ResetPasswordForm";
+"use client";
 
-export default function SigninPage() {
+import { Suspense } from "react";
+import ResetPassword from "./_components/ResetPasswordForm";
+
+export default function Page() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex items-center justify-center min-h-screen">
       <div className="max-w-sm mx-auto">
-        <ResetPassword />
+        <Suspense fallback={<div>Loading...</div>}>
+          <ResetPassword />
+        </Suspense>
       </div>
     </div>
   );

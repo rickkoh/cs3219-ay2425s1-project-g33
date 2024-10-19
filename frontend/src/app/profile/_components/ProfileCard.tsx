@@ -1,29 +1,19 @@
-
 import UserAvatar from "@/components/UserAvatar";
 import { Card } from "@/components/ui/card";
 import { Zap } from "lucide-react";
 import { UserProfile } from "@/types/User";
 
 interface ProfileCardProps {
-  userProfile: UserProfile
+  userProfile: UserProfile;
 }
 
-export function ProfileCard({userProfile}: ProfileCardProps) {
+export function ProfileCard({ userProfile }: ProfileCardProps) {
   return (
     <Card className="p-5">
       <div className="flex flex-col gap-5">
         <div className="flex items-center gap-4">
           <UserAvatar
-            userProfile={{
-              username: "jmsandiegoo",
-              email: "test@gmail.com",
-              displayName: "Jm San Diego",
-              proficiency: "Advanced",
-              languages: ["Python"],
-              isOnboarded: true,
-              roles: ["user"],
-              //profilePictureUrl: "testlink.com",
-            }}
+            userProfile={userProfile}
             isHoverEnabled={false}
             className="w-16 h-16"
           />

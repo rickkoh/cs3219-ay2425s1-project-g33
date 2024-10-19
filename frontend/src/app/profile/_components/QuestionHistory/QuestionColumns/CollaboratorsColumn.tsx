@@ -5,6 +5,7 @@ import { UserProfile } from "@/types/User";
 
 const mockCollaborators: UserProfile[] = [
   {
+    id: "1",
     username: "jmsandiegoo",
     email: "test@gmail.com",
     displayName: "Jm San Diego",
@@ -14,6 +15,7 @@ const mockCollaborators: UserProfile[] = [
     roles: ["user"],
   },
   {
+    id: "2",
     username: "charliebrown",
     email: "charlie@gmail.com",
     displayName: "Charlie Brown",

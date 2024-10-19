@@ -33,6 +33,7 @@ export function UserAvatarInput<TFieldValues extends FieldValues>({
               <UserAvatar
                 isHoverEnabled={false}
                 userProfile={{
+                  id: "1",
                   username: "_",
                   email: "_",
                   displayName: "_",
