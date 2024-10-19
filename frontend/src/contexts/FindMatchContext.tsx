@@ -120,7 +120,7 @@ export function FindMatchProvider({
       socket.disconnect();
     });
     reset();
-  }, [socket, userId, toast]);
+  }, [socket, userId]);
 
   const handleAcceptMatch = useCallback(() => {
     if (!socket.connected) {
@@ -144,7 +144,7 @@ export function FindMatchProvider({
       socket.disconnect();
       reset();
     });
-  }, [socket, userId, matchId, toast]);
+  }, [socket, userId, matchId]);
 
   const onMatchFound = useCallback(({ matchId, matchUsername }: { matchId: string, matchUsername: string }) => {
     setMatchId(matchId);
