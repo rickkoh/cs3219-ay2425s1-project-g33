@@ -20,6 +20,7 @@ import { useInterval } from "usehooks-ts";
 interface FindMatchContextProps {
   isConnected: boolean;
   matchId?: string;
+  matchUsername?: string;
   findingMatch: boolean;
   matchFound: boolean;
   isAwaitingConfirmation: boolean;
@@ -77,6 +78,8 @@ export function FindMatchProvider({
   );
 
   const [matchId, setMatchId] = useState<string | undefined>();
+
+  const [matchUsername, setMatchUsername] = useState<string | undefined>();
 
   const matchRequest: MatchRequest = useMemo(() => {
     return {
@@ -143,8 +146,9 @@ export function FindMatchProvider({
     });
   }, [socket, userId, matchId, toast]);
 
-  const onMatchFound = useCallback(({ matchId }: { matchId: string }) => {
+  const onMatchFound = useCallback(({ matchId, matchUsername }: { matchId: string, matchUsername: string }) => {
     setMatchId(matchId);
+    setMatchUsername(matchUsername);
     setFindingMatch(false);
     setMatchFound(true);
     setIsAwaitingConfirmation(false);
@@ -242,6 +246,7 @@ export function FindMatchProvider({
   const providerValue: FindMatchContextProps = {
     isConnected,
     matchId,
+    matchUsername,
     findingMatch,
     matchFound,
     isAwaitingConfirmation,
