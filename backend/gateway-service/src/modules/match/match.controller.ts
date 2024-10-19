@@ -70,7 +70,12 @@ export class MatchGateway implements OnGatewayInit {
     @MessageBody() payload: MatchRequestDto,
   ) {
     const { userId, selectedTopic, selectedDifficulty } = payload;
-    if (!userId || !selectedTopic || !selectedDifficulty) {
+    if (
+      !userId ||
+      !selectedTopic ||
+      !selectedDifficulty ||
+      selectedTopic.length === 0
+    ) {
       client.emit(MATCH_ERROR, 'Invalid match request payload.');
       return;
     }
