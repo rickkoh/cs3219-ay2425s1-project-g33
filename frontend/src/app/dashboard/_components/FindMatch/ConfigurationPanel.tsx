@@ -22,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { CaretDownIcon } from "@radix-ui/react-icons";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface MatchConfigurationPanelProps {
   difficulties: Difficulty[];
@@ -32,6 +33,7 @@ export default function ConfigurationPanel({
   difficulties: difficultyOptions,
   topics: topicOptions,
 }: MatchConfigurationPanelProps) {
+
   const [difficultyRef, { height: difficultyHeight }] = useMeasure();
   const [topicsRef, { height: topicsSelectionHeight }] = useMeasure();
 
@@ -46,11 +48,7 @@ export default function ConfigurationPanel({
   } = useFindMatchContext();
 
   const handleDifficultyCheckboxChange = (text: Difficulty) => {
-    if (difficulties.includes(text)) {
-      setDifficulty(difficulties.filter((item) => item !== text));
-    } else {
-      setDifficulty([...difficulties, text]);
-    }
+    setDifficulty(text); 
   };
 
   const handleTopicCheckboxChange = (text: Category) => {
@@ -109,40 +107,28 @@ export default function ConfigurationPanel({
               }px`,
             }}
           >
-            <div className="flex items-center col-span-2 space-x-2">
-              <Checkbox
-                id="All"
-                checked={difficulties.length === difficultyOptions.length}
-                onCheckedChange={() =>
-                  difficulties.length !== difficultyOptions.length
-                    ? setDifficulty([...difficultyOptions])
-                    : setDifficulty([])
-                }
-              />
-              <label
-                htmlFor="All"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Select All
-              </label>
-            </div>
-            {difficultyOptions.map((difficulty, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <Checkbox
-                  id={difficulty}
-                  checked={difficulties.includes(difficulty)}
-                  onCheckedChange={() =>
-                    handleDifficultyCheckboxChange(difficulty)
-                  }
-                />
+ 
+          <RadioGroup value={difficulties} onValueChange={(selectedValue: Difficulty) => setDifficulty(selectedValue)}>
+            {difficultyOptions.map((difficultyOption) => (
+              <div key={difficultyOption} className="flex items-center space-x-2">
+                <RadioGroupItem
+                  value={difficultyOption}
+                  id={difficultyOption}
+                  className="flex items-center space-x-2"
+                >
+                  <span className="text-sm font-medium leading-none">{difficultyOption}</span>
+                </RadioGroupItem>
                 <label
-                  htmlFor={difficulty}
+                  htmlFor={difficultyOption}
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  {difficulty}
+                  {difficultyOption}
                 </label>
               </div>
             ))}
+          </RadioGroup>
+
+
           </div>
           <Button
             onClick={() => setCollapseTopics(!collapseTopics)}
