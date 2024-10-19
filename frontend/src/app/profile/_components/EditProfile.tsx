@@ -11,7 +11,7 @@ import React, { useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { UserProfile } from "@/types/User";
+import { UserProfile, UserProfileSchema } from "@/types/User";
 
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,7 @@ import { RadioGroupInput } from "@/components/form/RadioGroupInput";
 import { useToast } from "@/hooks/use-toast";
 import { editUserProfile } from "@/services/userService";
 import { useRouter } from "next/navigation";
-import { LanguageEnum } from "@/types/Languages";
 import { ProficiencyEnum } from "@/types/Proficiency";
-import { RoleEnum } from "@/types/Role";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -33,12 +31,7 @@ interface EditProfileModalProps {
 const FormSchema = z.object({
   displayName: z.string().min(1, "Display Name is required"),
   username: z.string().min(1, "Username is required"),
-  email: z.string().email("Invalid email format"),
-  roles: z.array(RoleEnum),
   proficiency: ProficiencyEnum,
-  languages: z.array(LanguageEnum),
-  isOnboarded: z.boolean(),
-  profilePictureUrl: z.string(),
 });
 
 export function EditProfile({
@@ -54,14 +47,20 @@ export function EditProfile({
     defaultValues: {
       displayName: userProfile.displayName,
       username: userProfile.username,
-      email: userProfile.email,
       proficiency: userProfile.proficiency,
     },
   });
 
+  const { handleSubmit } = form;
+
   const onSubmit = useCallback(
     async (data: z.infer<typeof FormSchema>) => {
-      const response = await editUserProfile(data);
+      const newProfielUser = UserProfileSchema.parse({
+        ...userProfile,
+        ...data,
+      });
+
+      const response = await editUserProfile(newProfielUser);
 
       if (response.statusCode !== 200) {
         toast({
@@ -80,7 +79,7 @@ export function EditProfile({
       }
     },
 
-    [toast, setIsOpen, router]
+    [toast, setIsOpen, router, userProfile]
   );
 
   return (
@@ -90,37 +89,9 @@ export function EditProfile({
           <DialogTitle className="text-primary">Edit Profile</DialogTitle>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={handleSubmit(onSubmit)}
               className="flex flex-col space-y-4"
             >
-              {/* Profile Image Upload */}
-              {/*<FormLabel className="pt-8">Profile Image</FormLabel>
-             <div className="flex flex-row justify-center items-center p-2">
-                <input
-                    type="file"
-                    className="hidden"
-                    id="profile-upload"
-                    accept="image/*"
-                />
-                
-                <Avatar>
-                    <AvatarImage/>
-                    <AvatarFallback className="text-base font-normal text-foreground">
-                        <CodeXml/>
-                    </AvatarFallback>
-                </Avatar>
-
-                <div className="pl-6">
-                    <label
-                        htmlFor="profile-upload"
-                        className="bg-background-200 text-sm rounded-lg font-bold p-2 cursor-pointer"
-                    >
-                        Upload Image
-                    </label>
-                    <DialogDescription className="pt-2">.png, .jpeg files up to 2MB. Recommended size is 256x256px.</DialogDescription>
-                </div>
-            </div> */}
-
               {/* Display Name */}
               <TextInput
                 label="Display Name"
@@ -140,9 +111,6 @@ export function EditProfile({
                     "Username already taken"}
                 </p>
               )}
-
-              {/* Email */}
-              {/* <TextInput label="Email" name="email" placeholder="Email" /> */}
 
               {/* Proficiency Radio Buttons */}
               <RadioGroupInput

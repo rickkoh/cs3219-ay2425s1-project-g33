@@ -188,10 +188,14 @@ export function FindMatchProvider({
 
   const onMatchConfirmed = useCallback(
     ({ message, sessionId }: { message: string; sessionId: string }) => {
+      toast({
+        title: "Match Confirmed",
+        description: `You should be redirected to /${sessionId}`,
+      });
       console.log("Redirect to:", sessionId, message);
       reset();
     },
-    []
+    [toast]
   );
 
   const handleError = useCallback(
