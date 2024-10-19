@@ -7,16 +7,22 @@ import { CategoriesResponse } from "@/types/Category";
 import { questionTableColumns } from "./column";
 import { DataTable } from "./data-table";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/services/userService";
 
 export default async function QuestionTable() {
+  const user = await getCurrentUser();
   const questionsResponse: QuestionsResponse = await getQuestions();
   const categoriesResponse: CategoriesResponse = await getQuestionCategories();
+
+  if (user.statusCode !== 200 || !user.data) {
+    redirect("/auth/signin");
+  }
 
   if (
     questionsResponse.statusCode === 401 ||
     categoriesResponse.statusCode === 401
   ) {
-    redirect("/signin");
+    redirect("/auth/signin");
   }
 
   if (!questionsResponse.data) {
@@ -30,6 +36,7 @@ export default async function QuestionTable() {
 
   return (
     <DataTable
+      isAdmin={user.data.roles.includes("admin")}
       columns={questionTableColumns}
       data={questions}
       categories={categories}

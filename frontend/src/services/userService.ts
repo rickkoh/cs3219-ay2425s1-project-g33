@@ -7,29 +7,39 @@ import {
   UserProfileResponse,
   UserProfileResponseSchema,
 } from "@/types/User";
+import { revalidateTag } from "next/cache";
+import { cache } from "react";
 
-export async function getCurrentUser(): Promise<UserProfileResponse> {
-  try {
-    const access_token = await getAccessToken();
+export const getCurrentUser = cache(
+  async function (): Promise<UserProfileResponse> {
+    console.log("getCurrentUser service Invoked");
 
-    const res = await fetch(process.env.PUBLIC_API_URL + `/api/users/current`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${access_token}`,
-      },
-    });
+    try {
+      const access_token = await getAccessToken();
 
-    const data = await res.json();
+      const res = await fetch(
+        process.env.PUBLIC_API_URL + `/api/users/current`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+          next: { tags: ["currentUser"] },
+        }
+      );
 
-    return UserProfileResponseSchema.parse(data);
-  } catch (error) {
-    return {
-      statusCode: 500,
-      message: String(error),
-    };
+      const data = await res.json();
+
+      return UserProfileResponseSchema.parse(data);
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: String(error),
+      };
+    }
   }
-}
+);
 
 export async function editUserProfile(
   userProfile: UserProfile
@@ -49,6 +59,8 @@ export async function editUserProfile(
     });
 
     const data = await res.json();
+
+    revalidateTag("currentUser");
 
     return UserProfileResponseSchema.parse(data);
   } catch (error) {

@@ -5,6 +5,8 @@ import UserAvatar from "@/components/UserAvatar";
 import React from "react";
 import { twMerge } from "tailwind-merge";
 import LogoutButton from "./LogoutButton";
+import { getCurrentUser } from "@/services/userService";
+import { redirect } from "next/navigation";
 
 interface NavbarProps {
   isMinimal?: boolean;
@@ -79,16 +81,27 @@ function NavSearchBar() {
   );
 }
 
-function NavUserDetails() {
+async function NavUserDetails() {
+  const userProfileResponse = await getCurrentUser();
+
+  if (userProfileResponse.statusCode === 401) {
+    redirect("/auth/signin");
+  }
+
+  if (!userProfileResponse.data) {
+    return <div>{userProfileResponse.message}</div>;
+  }
+
   const noOfStreakDays = 1;
+
   return (
     <div className="flex items-center gap-3">
       <Flame
         className={noOfStreakDays > 0 ? "stroke-primary" : "stroke-muted"}
         size={20}
       />
-      <small className="whitespace-nowrap">10 days</small>
-      <UserAvatar src={"https://nonexistent-link"} name="Jm San Diego" />
+      <small className="whitespace-nowrap">{10} day(s)</small>
+      <UserAvatar userProfile={userProfileResponse.data} />
       <LogoutButton />
     </div>
   );

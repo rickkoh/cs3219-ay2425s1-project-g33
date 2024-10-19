@@ -413,6 +413,7 @@ export default function MultiBadgeSelectInput<
                 // @ts-expect-error: we ignore since PathByValue should ensure name are of type string[] from the props
                 // but rhf currently has this issue according to github discussion hence ignoring the ts issue by: jmsandiegoo
                 form.setValue(name, value);
+                form.trigger(name);
               }}
             />
           </FormControl>

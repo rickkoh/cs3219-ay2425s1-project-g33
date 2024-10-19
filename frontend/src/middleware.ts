@@ -1,26 +1,10 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { parseJwt } from "@/lib/auth";
-import { AccessToken, AccessTokenSchema } from "./types/Token";
+import { chain } from "./middlewares/chain";
+import { withAuthMiddleware } from "./middlewares/withAuthMiddleware";
+import { withTokenRefreshMiddleware } from "./middlewares/withTokenRefreshMiddleware";
 
-// This function can be marked `async` if using `await` inside
-export async function middleware(request: NextRequest) {
-  const token = request.cookies.get("access_token");
-  if (!token) {
-    return NextResponse.redirect(new URL("/signin", request.url));
-  }
-
-  const tokenValue: AccessToken = AccessTokenSchema.parse(token.value);
-  const decoded = parseJwt(tokenValue);
-
-  if (!decoded.isOnboarded) {
-    return NextResponse.redirect(new URL("/onboard", request.url));
-  }
-
-  return NextResponse.next();
-}
+export default chain([withTokenRefreshMiddleware, withAuthMiddleware]);
 
 // Define routes that should use the middleware
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: "/((?!api|static|.*\\..*|_next).*)",
 };

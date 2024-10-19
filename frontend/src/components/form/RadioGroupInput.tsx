@@ -10,8 +10,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { FieldPath, FieldValues, useFormContext } from "react-hook-form";
-import React, { forwardRef } from "react";
-import { Card, CardContent } from "../ui/card";
+import React from "react";
+import { Card } from "../ui/card";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 
@@ -88,10 +88,14 @@ const RadioGroupCardItem = React.forwardRef<
     label: string;
     description?: string;
   } & React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
->(({icon, label, description, checked ,...props}, ref) => {
+>(({ icon, label, description, ...props }, ref) => {
   return (
     <RadioGroupPrimitive.Item ref={ref} {...props}>
-      <Card className={cn("flex flex-row bg-background-200 peer-data-[]:[state=checked]:bg-primary")}>
+      <Card
+        className={cn(
+          "flex flex-row bg-background-200 peer-data-[]:[state=checked]:bg-primary"
+        )}
+      >
         {icon}
         <div>
           <h4>{label}</h4>
@@ -101,3 +105,7 @@ const RadioGroupCardItem = React.forwardRef<
     </RadioGroupPrimitive.Item>
   );
 });
+
+RadioGroupCardInput.displayName = "RadioGroupCardInput";
+
+RadioGroupCardItem.displayName = "RadioGroupCardItem";

@@ -12,11 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useOnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
+import { useToast } from "@/hooks/use-toast";
 import { editUserProfile } from "@/services/userService";
 import { ProficiencyEnum } from "@/types/Proficiency";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MoveLeft } from "lucide-react";
-import { useCallback, useContext } from "react";
+import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -25,6 +26,8 @@ const FormSchema = z.object({
 });
 
 export default function ProficiencyForm() {
+  const { toast } = useToast();
+
   const { userProfile, updateUserProfile, nextStep, prevStep } =
     useOnboardMultiStepFormContext();
 
@@ -45,14 +48,14 @@ export default function ProficiencyForm() {
       const userProfileResponse = await editUserProfile(updatedUserProfile);
 
       if (userProfileResponse.statusCode !== 200) {
-        console.error(userProfileResponse.message);
+        toast({ title: "Error!", description: userProfileResponse.message });
         return;
       }
 
       updateUserProfile(userProfileResponse.data);
       nextStep();
     },
-    [updateUserProfile, userProfile, nextStep]
+    [updateUserProfile, userProfile, nextStep, toast]
   );
 
   return (
@@ -72,7 +75,6 @@ export default function ProficiencyForm() {
             {/* <RadioGroupCardInput defaultValue="test1"/> */}
             <RadioGroupInput
               label={""}
-              
               name="proficiency"
               options={[
                 {

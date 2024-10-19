@@ -16,7 +16,9 @@ import { revalidatePath } from "next/cache";
 import qs from "querystring";
 import { cache } from "react";
 
-export async function getQuestion(slug: string): Promise<QuestionResponse> {
+export const getQuestion = cache(async function (
+  slug: string
+): Promise<QuestionResponse> {
   try {
     const access_token = await getAccessToken();
 
@@ -40,38 +42,40 @@ export async function getQuestion(slug: string): Promise<QuestionResponse> {
       message: String(error),
     };
   }
-}
+});
 
-export async function getQuestions(): Promise<QuestionsResponse> {
-  const query = qs.stringify({
-    limit: 99,
-  });
+export const getQuestions = cache(
+  async function (): Promise<QuestionsResponse> {
+    const query = qs.stringify({
+      limit: 99,
+    });
 
-  try {
-    const access_token = await getAccessToken();
+    try {
+      const access_token = await getAccessToken();
 
-    const res: Response = await fetch(
-      process.env.PUBLIC_API_URL + `/api/questions?${query}`,
-      {
-        cache: "no-cache",
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
-        },
-      }
-    );
+      const res: Response = await fetch(
+        process.env.PUBLIC_API_URL + `/api/questions?${query}`,
+        {
+          cache: "no-cache",
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
 
-    const resObj = await res.json();
+      const resObj = await res.json();
 
-    return QuestionsResponseSchema.parse(resObj);
-  } catch (error) {
-    return {
-      statusCode: 500,
-      message: String(error),
-    };
+      return QuestionsResponseSchema.parse(resObj);
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: String(error),
+      };
+    }
   }
-}
+);
 
 export const getQuestionCategories = cache(
   async function (): Promise<CategoriesResponse> {
@@ -91,7 +95,7 @@ export const getQuestionCategories = cache(
       );
 
       const resObj = await res.json();
-      
+
       return CategoriesResponseSchema.parse(resObj);
     } catch (error) {
       return {
