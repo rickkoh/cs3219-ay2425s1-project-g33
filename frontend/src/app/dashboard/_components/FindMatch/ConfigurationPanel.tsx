@@ -109,13 +109,13 @@ export default function ConfigurationPanel({
           >
  
           <RadioGroup value={difficulties} onValueChange={(selectedValue: Difficulty) => setDifficulty(selectedValue)}>
+            <div className="flex flex-row space-x-4">
             {difficultyOptions.map((difficultyOption) => (
-              <div key={difficultyOption} className="flex items-center space-x-2">
+              <div key={difficultyOption} className="flex items-center space-x-2 p-4">
                 <RadioGroupItem
                   value={difficultyOption}
                   id={difficultyOption}
-                  className="flex items-center space-x-2"
-                >
+                  className="flex items-center space-x-2">
                   <span className="text-sm font-medium leading-none">{difficultyOption}</span>
                 </RadioGroupItem>
                 <label
@@ -126,6 +126,7 @@ export default function ConfigurationPanel({
                 </label>
               </div>
             ))}
+            </div>
           </RadioGroup>
 
           </div>
