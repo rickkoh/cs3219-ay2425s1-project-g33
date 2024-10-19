@@ -33,7 +33,6 @@ export default function ConfigurationPanel({
   difficulties: difficultyOptions,
   topics: topicOptions,
 }: MatchConfigurationPanelProps) {
-
   const [difficultyRef, { height: difficultyHeight }] = useMeasure();
   const [topicsRef, { height: topicsSelectionHeight }] = useMeasure();
 
@@ -46,10 +45,6 @@ export default function ConfigurationPanel({
     setTopics,
     handleFindMatch,
   } = useFindMatchContext();
-
-  const handleDifficultyCheckboxChange = (text: Difficulty) => {
-    setDifficulty(text); 
-  };
 
   const handleTopicCheckboxChange = (text: Category) => {
     if (topics.includes(text)) {
@@ -98,7 +93,7 @@ export default function ConfigurationPanel({
           <div
             ref={difficultyRef}
             className={cn(
-              "grid grid-cols-2 gap-4 z-0 opacity-100 transition-all duration-500",
+              "z-0 opacity-100 transition-all duration-500",
               collapseDifficulties && `-z-10 opacity-0`
             )}
             style={{
@@ -107,28 +102,38 @@ export default function ConfigurationPanel({
               }px`,
             }}
           >
- 
-          <RadioGroup value={difficulties} onValueChange={(selectedValue: Difficulty) => setDifficulty(selectedValue)}>
-            <div className="flex flex-row space-x-4">
-            {difficultyOptions.map((difficultyOption) => (
-              <div key={difficultyOption} className="flex items-center space-x-2 p-4">
-                <RadioGroupItem
-                  value={difficultyOption}
-                  id={difficultyOption}
-                  className="flex items-center space-x-2">
-                  <span className="text-sm font-medium leading-none">{difficultyOption}</span>
-                </RadioGroupItem>
-                <label
-                  htmlFor={difficultyOption}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {difficultyOption}
-                </label>
+            <RadioGroup
+              value={difficulties}
+              onValueChange={(selectedValue: Difficulty) =>
+                setDifficulty(selectedValue)
+              }
+              className="flex w-full"
+            >
+              <div className="flex flex-row justify-start w-full gap-12">
+                {difficultyOptions.map((difficultyOption) => (
+                  <div
+                    key={difficultyOption}
+                    className="flex flex-row items-center gap-2"
+                  >
+                    <RadioGroupItem
+                      value={difficultyOption}
+                      id={difficultyOption}
+                      className="flex items-center space-x-2"
+                    >
+                      <span className="text-sm font-medium leading-none">
+                        {difficultyOption}
+                      </span>
+                    </RadioGroupItem>
+                    <label
+                      htmlFor={difficultyOption}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {difficultyOption}
+                    </label>
+                  </div>
+                ))}
               </div>
-            ))}
-            </div>
-          </RadioGroup>
-
+            </RadioGroup>
           </div>
           <Button
             onClick={() => setCollapseTopics(!collapseTopics)}
