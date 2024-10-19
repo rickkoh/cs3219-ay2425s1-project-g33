@@ -21,6 +21,7 @@ import { Category } from "@/types/Category";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { CaretDownIcon } from "@radix-ui/react-icons";
 
 interface MatchConfigurationPanelProps {
   difficulties: Difficulty[];
@@ -84,7 +85,16 @@ export default function ConfigurationPanel({
           <Button
             onClick={() => setCollapseDifficulties(!collapseDifficulties)}
           >
-            Select difficulties
+            <div className="flex flex-row justify-between w-full">
+              <span>Select difficulties</span>
+              <CaretDownIcon
+                className={cn(
+                  "w-6 h-6",
+                  "transition-all duration-300",
+                  collapseDifficulties && "transform rotate-180"
+                )}
+              />
+            </div>
           </Button>
           <div
             ref={difficultyRef}
@@ -134,7 +144,16 @@ export default function ConfigurationPanel({
             ))}
           </div>
           <Button onClick={() => setCollapseTopics(!collapseTopics)}>
-            Select topics
+            <div className="flex flex-row items-center justify-between w-full">
+              <span>Select topics</span>
+              <CaretDownIcon
+                className={cn(
+                  "w-6 h-6",
+                  "transition-all duration-300",
+                  collapseTopics && "transform rotate-180"
+                )}
+              />
+            </div>
           </Button>
           <div
             ref={topicsRef}
