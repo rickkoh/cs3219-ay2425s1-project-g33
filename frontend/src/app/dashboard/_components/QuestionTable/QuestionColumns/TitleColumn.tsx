@@ -2,10 +2,13 @@ import { Question, QuestionSchema } from "@/types/Question";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "../data-table-column-header";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const TitleColumn: ColumnDef<Question> = {
   accessorKey: "title",
@@ -18,15 +21,17 @@ const TitleColumn: ColumnDef<Question> = {
     const question = QuestionSchema.parse(row.original);
 
     return (
-      <HoverCard>
-        <HoverCardTrigger className="hover:cursor-pointer">
-          {question.title}
-        </HoverCardTrigger>
-        <HoverCardContent>
-          <h2 className="mb-2 text-2xl">{question.title}</h2>
-          <p>{question.description}</p>
-        </HoverCardContent>
-      </HoverCard>
+      <Dialog>
+        <DialogTrigger asChild className="hover:cursor-pointer">
+          <p>{question.title}</p>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{question.title}</DialogTitle>
+            <DialogDescription>{question.description}</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     );
   },
 };

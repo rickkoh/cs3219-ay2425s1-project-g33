@@ -22,7 +22,7 @@ import { firstValueFrom } from 'rxjs';
 import { ClientProxy } from '@nestjs/microservices';
 import { UpdateUserDto, UsersResponseDto } from './dto';
 import { plainToInstance } from 'class-transformer';
-import { Role } from 'src/constants';
+import { Role } from 'src/common/constants';
 import { RolesGuard } from 'src/common/guards';
 
 @ApiTags('users')
@@ -43,7 +43,8 @@ export class UserController {
     const user = await firstValueFrom(
       this.userClient.send({ cmd: 'get-user-by-id' }, userId),
     );
-    return plainToInstance(UsersResponseDto, user);
+    const { _id, ...userDetails } = user;
+    return plainToInstance(UsersResponseDto, { id: _id, ...userDetails });
   }
 
   @Patch('profile')
@@ -56,7 +57,11 @@ export class UserController {
     const updatedUser = await firstValueFrom(
       this.userClient.send({ cmd: 'update-user-profile' }, payload),
     );
-    return plainToInstance(UsersResponseDto, updatedUser);
+    const { _id, ...userDetails } = updatedUser;
+    return plainToInstance(UsersResponseDto, {
+      id: _id,
+      ...userDetails,
+    });
   }
 
   @Patch(':id/assign-admin')

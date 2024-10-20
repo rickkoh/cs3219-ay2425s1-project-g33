@@ -8,62 +8,81 @@ import {
 import { Card } from "@/components/ui/card";
 import { Zap } from "lucide-react";
 import ViewProfileButton from "./ViewProfileButton";
+import { UserProfile } from "@/types/User";
 
-interface ProfileMiniDetailsProps {
+interface ProfileCardProps {
+  userProfile: UserProfile;
+}
+
+interface ProfileMiniDetailsProps extends ProfileCardProps {
   isViewProfileEnabled?: boolean;
 }
 
 function ProfileMiniDetails({
+  userProfile,
   isViewProfileEnabled = false,
 }: ProfileMiniDetailsProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-4">
         <UserAvatar
-          src={"https://non-existent.com"}
-          name={"Jm San Diego"}
+          userProfile={userProfile}
           isHoverEnabled={false}
           className="w-16 h-16"
         />
         <div>
-          <h4 className="leading-none">Jm San Diego</h4>
-          <small className="inline-block mb-1 text-card-foreground-100">@skibidi_toilet</small>
+          <h4 className="leading-none">{userProfile.displayName}</h4>
+          <small className="inline-block mb-1 text-card-foreground-100">
+            @{userProfile.username}
+          </small>
           <p>
             Proficiency:{" "}
-            <span className="text-card-foreground-100">Expert</span>
+            <span className="text-card-foreground-100">
+              {userProfile.proficiency}
+            </span>
           </p>
           <p>
             Elo:{" "}
             <span className="text-primary">
-              1000 <Zap className="inline" size={14} />
+              {1000} <Zap className="inline" size={14} />
             </span>
           </p>
         </div>
       </div>
-      {isViewProfileEnabled && (
-        <ViewProfileButton />
-      )}
+      {isViewProfileEnabled && <ViewProfileButton />}
     </div>
   );
 }
 
+type ProfileMiniDetailsCardProp = Omit<
+  ProfileMiniDetailsProps,
+  "isViewProfileEnabled"
+>;
+
 // Normal card variant
-export function ProfileMiniDetailsCard() {
+export function ProfileMiniDetailsCard({
+  userProfile,
+}: ProfileMiniDetailsCardProp) {
   return (
     <Card className="p-5">
       <div>
-        <ProfileMiniDetails />
+        <ProfileMiniDetails
+          userProfile={userProfile}
+          isViewProfileEnabled={false}
+        />
       </div>
     </Card>
   );
 }
 
-interface ProfileMiniDetailsHoverCardProps {
+interface ProfileMiniDetailsHoverCardProps extends ProfileMiniDetailsProps {
   children: React.ReactNode;
 }
 
 // Hover card variant
 export function ProfileMiniDetailsHoverCard({
+  userProfile,
+  isViewProfileEnabled = true,
   children,
 }: ProfileMiniDetailsHoverCardProps) {
   return (
@@ -72,7 +91,10 @@ export function ProfileMiniDetailsHoverCard({
         <Button variant="link">{children}</Button>
       </HoverCardTrigger>
       <HoverCardContent className="w-80">
-        <ProfileMiniDetails isViewProfileEnabled={true} />
+        <ProfileMiniDetails
+          userProfile={userProfile}
+          isViewProfileEnabled={isViewProfileEnabled}
+        />
       </HoverCardContent>
     </HoverCard>
   );

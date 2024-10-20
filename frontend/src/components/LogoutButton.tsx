@@ -12,7 +12,7 @@ export default function LogoutButton() {
   const onClick = useCallback(async () => {
     await logout();
     localStorage.removeItem("access_token");
-    router.push("/signin");
+    router.replace("/auth/signin");
   }, [router]);
 
   return (

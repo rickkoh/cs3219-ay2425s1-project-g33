@@ -23,6 +23,7 @@ interface OnboardMultiStepFormContextType {
 
 const defaultValues: OnboardMultiStepFormContextType = {
   userProfile: {
+    id: "",
     username: "",
     displayName: "",
     email: "",

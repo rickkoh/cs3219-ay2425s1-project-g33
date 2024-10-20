@@ -1,9 +1,20 @@
-"use client";
+import { getCurrentUser } from "@/services/userService";
+import { redirect } from "next/navigation";
 
-import { useUser } from "@/contexts/UserContext";
+export default async function WelcomeMessage() {
+  const userProfileResponse = await getCurrentUser();
 
-export default function WelcomeMessage() {
-  const user = useUser();
+  if (userProfileResponse.statusCode === 401) {
+    redirect("/auth/signin");
+  }
 
-  return <h1 className="text-xl font-bold">Welcome Back, {user?.email}!</h1>;
+  if (!userProfileResponse.data) {
+    return <div>{userProfileResponse.message}</div>;
+  }
+
+  return (
+    <h1 className="text-xl font-bold">
+      Welcome Back, {userProfileResponse.data.displayName}!
+    </h1>
+  );
 }

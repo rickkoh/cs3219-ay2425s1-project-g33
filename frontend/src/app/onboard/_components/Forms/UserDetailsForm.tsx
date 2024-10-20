@@ -14,31 +14,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect } from "react";
+import { ChangeEvent, useCallback } from "react";
 import { useOnboardMultiStepFormContext } from "@/contexts/OnboardMultiStepFormContext";
 import { editUserProfile } from "@/services/userService";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useToast } from "@/hooks/use-toast";
 
 const FormSchema = z.object({
   profilePicture: z.string(), // TODO: change to actual image file type
-  displayName: z.string(),
-  username: z.string().refine((val) => val === val.toLowerCase(), {
-    message: "Username must be in lowercase",
-  }),
+  displayName: z.string().trim().min(1, "Display name is required"),
+  username: z
+    .string()
+    .trim()
+    .min(1, "Username is required")
+    .regex(/^[a-z0-9._]*$/, "Only a-z character, _ and . are allowed."),
 });
 
 export default function UserDetailsForm() {
   const { userProfile, updateUserProfile, nextStep } =
     useOnboardMultiStepFormContext();
 
+  const { toast } = useToast();
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       profilePicture: "",
-      displayName: userProfile.displayName,
-      username: userProfile.username,
+      displayName: userProfile.displayName || "",
+      username: userProfile.username || "",
     },
   });
+
+  const handleUsernameOnChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      form.setValue("username", e.target.value.toLowerCase());
+    },
+    [form]
+  );
 
   const onSubmit = useCallback(
     async (data: z.infer<typeof FormSchema>) => {
@@ -50,14 +62,14 @@ export default function UserDetailsForm() {
       const userProfileResponse = await editUserProfile(updatedUserProfile);
 
       if (userProfileResponse.statusCode !== 200) {
-        console.error(userProfileResponse.message);
+        toast({ title: "Error!", description: userProfileResponse.message });
         return;
       }
 
       updateUserProfile(userProfileResponse.data);
       nextStep();
     },
-    [updateUserProfile, userProfile, nextStep]
+    [updateUserProfile, userProfile, nextStep, toast]
   );
 
   return (
@@ -80,6 +92,7 @@ export default function UserDetailsForm() {
               label="Username"
               name="username"
               placeholder={"Username"}
+              onChange={(e) => handleUsernameOnChange(e)}
               className="bg-input-background-100"
             />
             <TextInput

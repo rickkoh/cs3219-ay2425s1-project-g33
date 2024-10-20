@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { DataTablePagination } from "./data-table-pagination";
 
@@ -29,24 +29,19 @@ import DataTableToolbar from "./data-table-toolbar";
 
 import { Card } from "@/components/ui/card";
 import { QuestionTableProvider } from "@/contexts/QuestionTableContext";
-import { useUser } from "@/contexts/UserContext";
 
 interface DataTableProps<TData, TValue> {
+  isAdmin: boolean;
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   categories?: string[];
 }
 
 export function DataTable<TData, TValue>({
+  isAdmin,
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const user = useUser();
-
-  const isAdmin = useMemo(() => {
-    return user?.roles.includes("admin");
-  }, [user]);
-
   const filteredColumns = isAdmin
     ? columns
     : columns.filter((column) => column.id !== "Action");
@@ -72,7 +67,7 @@ export function DataTable<TData, TValue>({
   return (
     <QuestionTableProvider>
       <div className="flex flex-col gap-4">
-        <DataTableToolbar table={table} />
+        <DataTableToolbar isAdmin={isAdmin} table={table} />
 
         <Card className="w-full h-full overflow-scroll">
           <div className="border rounded-md">
