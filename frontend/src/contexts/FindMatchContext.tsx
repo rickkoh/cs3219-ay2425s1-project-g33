@@ -54,8 +54,10 @@ export function FindMatchProvider({
   children,
 }: PropsWithChildren<FindMatchProviderProps>) {
   const { toast } = useToast();
-  
-  const [difficulty, setDifficulty] = useState<Difficulty>(DifficultyEnum.enum.Medium);
+
+  const [difficulty, setDifficulty] = useState<Difficulty>(
+    DifficultyEnum.enum.Medium
+  );
 
   const [topics, setTopics] = useState<Category[]>(["Array"]);
 
@@ -250,7 +252,7 @@ export function FindMatchProvider({
         clearTimeout(timer);
       };
     }
-  }, [findingMatch]);
+  }, [findingMatch, handleCancelMatch]);
 
   // Reset state
   function reset() {

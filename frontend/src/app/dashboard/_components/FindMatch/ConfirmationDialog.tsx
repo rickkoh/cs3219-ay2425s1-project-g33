@@ -18,11 +18,10 @@ import { Ellipsis } from "lucide-react";
 import { UserProfile } from "@/types/User";
 import { getInitialsFromName } from "@/lib/utils";
 import { useCountdown } from "usehooks-ts";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface ConfirmationDialogProps {
   user: UserProfile;
-
 }
 
 export default function ConfirmationDialog({ user }: ConfirmationDialogProps) {
@@ -33,7 +32,9 @@ export default function ConfirmationDialog({ user }: ConfirmationDialogProps) {
     handleDeclineMatch,
     handleAcceptMatch,
   } = useFindMatchContext();
-  
+
+  const [accepted, setAccepted] = useState(false);
+
   const [counter, { startCountdown, stopCountdown, resetCountdown }] =
     useCountdown({
       countStart: 10,
@@ -41,28 +42,37 @@ export default function ConfirmationDialog({ user }: ConfirmationDialogProps) {
       isIncrement: false,
     });
 
+  const handleAcceptClick = useCallback(() => {
+    stopCountdown();
+    resetCountdown();
+    handleAcceptMatch();
+    setAccepted(true);
+  }, [stopCountdown, resetCountdown, handleAcceptMatch]);
+
   // onComplete logic here
   useEffect(() => {
     if (counter === 0) {
       handleDeclineMatch();
     }
-  }, [counter]);
+  }, [counter, handleDeclineMatch]);
 
   useEffect(() => {
     if (matchFound) {
       startCountdown();
+      setAccepted(false);
     } else {
       stopCountdown();
       resetCountdown();
     }
-  }, [matchFound]);
+  }, [matchFound, startCountdown, stopCountdown, resetCountdown]);
 
   return (
     <AlertDialog open={matchFound}>
       <AlertDialogContent className="flex flex-col gap-12">
         <AlertDialogHeader>
           <AlertDialogTitle>
-            You have found a match ({counter}s)
+            You have{" "}
+            {accepted ? "accepted the match" : `found a match (${counter}s)`}
           </AlertDialogTitle>
           <AlertDialogDescription>
             Once you have accepted the match, you will be redirected to another
@@ -90,7 +100,7 @@ export default function ConfirmationDialog({ user }: ConfirmationDialogProps) {
           </AlertDialogCancel>
           <AlertDialogAction
             disabled={isAwaitingConfirmation}
-            onClick={handleAcceptMatch}
+            onClick={handleAcceptClick}
           >
             {isAwaitingConfirmation
               ? "Waiting for other user to accept"

@@ -35,19 +35,19 @@ export default function ContinueDialog() {
     handleCancelMatch();
     setShowContinueDialog(false);
     stopCountdown();
-  }, []);
+  }, [handleCancelMatch, setShowContinueDialog, stopCountdown]);
 
   const handleContinue = useCallback(() => {
     handleFindMatch();
     setShowContinueDialog(false);
-  }, []);
+  }, [handleFindMatch, setShowContinueDialog]);
 
   // onComplete logic here
   useEffect(() => {
     if (counter === 0) {
       handleCancel();
     }
-  }, [counter]);
+  }, [counter, handleCancel]);
 
   useEffect(() => {
     if (showContinueDialog) {
@@ -56,7 +56,7 @@ export default function ContinueDialog() {
       stopCountdown();
       resetCountdown();
     }
-  }, [showContinueDialog]);
+  }, [showContinueDialog, startCountdown, stopCountdown, resetCountdown]);
 
   return (
     <AlertDialog open={showContinueDialog}>
