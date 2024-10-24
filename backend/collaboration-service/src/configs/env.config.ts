@@ -12,22 +12,19 @@ function getEnvVar(name: string): string {
 }
 
 export const config = {
-  matchingService: {
-    port: parseInt(getEnvVar('MATCHING_SERVICE_PORT')),
-    host: getEnvVar('MATCHING_SERVICE_HOST'),
+  collaborationService: {
+    port: parseInt(getEnvVar('COLLABORATION_SERVICE_PORT')),
+    host: getEnvVar('COLLABORATION_SERVICE_HOST'),
     transport:
-      Transport[getEnvVar('MATCHING_SERVICE_TRANSPORT')] || Transport.TCP,
+      Transport[getEnvVar('COLLABORATION_SERVICE_TRANSPORT')] || Transport.TCP,
+  },
+  eventStore: {
+    connection_string: getEnvVar('EVENT_STORE_CONNECTION_STRING'),
   },
   userService: {
     port: parseInt(getEnvVar('USER_SERVICE_PORT')),
     host: getEnvVar('USER_SERVICE_HOST'),
     transport: Transport[getEnvVar('USER_SERVICE_TRANSPORT')] || Transport.TCP,
-  },
-  questionService: {
-    port: parseInt(getEnvVar('QUESTION_SERVICE_PORT')),
-    host: getEnvVar('QUESTION_SERVICE_HOST'),
-    transport:
-      Transport[getEnvVar('QUESTION_SERVICE_TRANSPORT')] || Transport.TCP,
   },
   mongo: {
     connectionString: getEnvVar('MONGO_CONNECTION_STRING'),
