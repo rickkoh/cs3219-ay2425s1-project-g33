@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { TextInput } from "@/components/form/TextInput";
 import MultiBadgeSelectInput from "@/components/form/MultiBadgeSelect";
 import { Button } from "@/components/ui/button";
-import { TextAreaInput } from "@/components/form/TextAreaInput";
+import QuillEditor from "@/components/form/QuillEditor";
 import { RadioGroupInput } from "@/components/form/RadioGroupInput";
 import { createQuestion } from "@/services/questionService";
 import { useToast } from "@/hooks/use-toast";
@@ -46,12 +46,21 @@ export function CreateQuestionModal({ children }: PropsWithChildren) {
 
   const onSubmit = useCallback(
     async (data: z.infer<typeof FormSchema>) => {
-      await createQuestion(data);
-      setIsOpen(false);
-      toast({
-        title: "Question added!",
-        description: "The question has been added to the repository.",
-      });
+      const question = await createQuestion(data);
+      if (question.statusCode === 200) {
+        setIsOpen(false);
+        toast({
+          title: "Question added!",
+          description: "The question has been added to the repository.",
+        });
+      } else {
+        const message =
+          question.message || "There was an error adding the question.";
+        toast({
+          title: "Error",
+          description: message,
+        });
+      }
     },
     [toast]
   );
@@ -105,10 +114,9 @@ export function CreateQuestionModal({ children }: PropsWithChildren) {
                   label: category,
                 }))}
               />
-              <TextAreaInput
-                label="Problem Description"
-                name="description"
-                placeholder="Type your description here"
+              <QuillEditor
+                value={form.watch('description')}
+                onChange={(value) => form.setValue('description', value)}
               />
               <Button className="self-center" type="submit">
                 {form.formState.isSubmitting

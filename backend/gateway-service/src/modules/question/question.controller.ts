@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import {
   CreateQuestionDto,
+  FindQuestionByIdDto,
   FindQuestionBySlugDto,
   GetQuestionsDto,
   UpdateQuestionDto,
@@ -52,12 +53,22 @@ export class QuestionController {
   }
 
   // Get question details by slug
-  @Get(':slug')
-  @ApiOkResponse({ description: 'Get question details by slug successfully' })
-  @ApiBadRequestResponse({ description: 'Invalid slug' })
-  getQuestionDetailsBySlug(@Param('slug') slug: string) {
-    const payload: FindQuestionBySlugDto = { slug };
-    return this.questionClient.send({ cmd: 'get-question-details' }, payload);
+  // @Get(':slug')
+  // @ApiOkResponse({ description: 'Get question details by slug successfully' })
+  // @ApiBadRequestResponse({ description: 'Invalid slug' })
+  // getQuestionDetailsBySlug(@Param('slug') slug: string) {
+  //   const payload: FindQuestionBySlugDto = { slug };
+  //   console.log(payload)
+  //   return this.questionClient.send({ cmd: 'get-question-by-slug' }, payload);
+  // }
+
+  // Get question by id
+  @Get(':id')
+  @ApiOkResponse({ description: 'Get question by id successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid question id' })
+  getQuestionById(@Param('id') id: string) {
+    const payload: FindQuestionByIdDto = { id: id };
+    return this.questionClient.send({ cmd: 'get-question-by-id' }, payload);
   }
 
   // Create question

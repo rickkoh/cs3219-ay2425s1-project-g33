@@ -25,12 +25,11 @@ export default async function FindMatchButton() {
     categories = categoriesResponse.data.categories;
   }
 
+  const socketUrl = process.env.PUBLIC_WEBSOCKET_URL || "ws://localhost:4000";
+
   return (
     // Not the right way to parse the user data
-    <FindMatchProvider
-      socketUrl={`ws://localhost:4000/match`}
-      userId={userData.id}
-    >
+    <FindMatchProvider socketUrl={`${socketUrl}/match`} userId={userData.id}>
       <ControlButton />
       <ConfigurationPanel
         difficulties={DifficultyEnum.options}

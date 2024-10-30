@@ -20,6 +20,9 @@ services:
       - user-service
       - auth-service
       - matching-service
+      - collaboration-service
+      # - eventstore.db
+      - redis
     networks:
       - backend-network
       - shared-network
@@ -92,6 +95,36 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+    networks:
+      - backend-network
+
+  collaboration-service:
+    build:
+      context: ./collaboration-service
+      target: development
+    container_name: collaboration-service
+    volumes:
+      - ./collaboration-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+    env_file:
+      - ./collaboration-service/.env
+    networks:
+      - backend-network
+    ports:
+      - "3005:4000"
+
+  y-websocket-service:
+    build:
+      context: ./y-websocket-service
+      target: development
+    container_name: y-websocket-service
+    volumes:
+      - ./y-websocket-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+    ports:
+      - "4001:4001"
     networks:
       - backend-network
 

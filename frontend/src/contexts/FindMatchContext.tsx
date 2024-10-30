@@ -16,6 +16,7 @@ import { MatchRequest } from "@/types/Match";
 import { useToast } from "@/hooks/use-toast";
 
 import { useInterval } from "usehooks-ts";
+import { useRouter } from "next/navigation";
 
 interface FindMatchContextProps {
   isConnected: boolean;
@@ -54,6 +55,7 @@ export function FindMatchProvider({
   children,
 }: PropsWithChildren<FindMatchProviderProps>) {
   const { toast } = useToast();
+  const router = useRouter();
 
   const [difficulty, setDifficulty] = useState<Difficulty>(
     DifficultyEnum.enum.Medium
@@ -197,8 +199,9 @@ export function FindMatchProvider({
       });
       console.log("Redirect to:", sessionId, message);
       reset();
+      router.push(`/collaboration/${sessionId}`);
     },
-    [toast]
+    [router, toast]
   );
 
   const handleError = useCallback(

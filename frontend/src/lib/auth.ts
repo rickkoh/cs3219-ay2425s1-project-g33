@@ -15,7 +15,7 @@ import {
  */
 export async function getAccessToken(): Promise<AccessToken> {
   "use server";
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const access_token = AccessTokenSchema.parse(
     cookieStore.get("access_token")?.value
   );
@@ -30,7 +30,7 @@ export async function getAccessToken(): Promise<AccessToken> {
  */
 export async function getRefreshToken(): Promise<RefreshToken> {
   "use server";
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const access_token = AccessTokenSchema.parse(
     cookieStore.get("refresh_token")?.value
   );
@@ -51,7 +51,7 @@ export async function setAuthCookieSession(
   tokenPair: TokenPair
 ): Promise<void> {
   "use server";
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set("access_token", tokenPair.access_token, {
     httpOnly: true,
     // secure: true, // Uncomment this line when using HTTPS
@@ -75,7 +75,7 @@ export async function setAuthCookieSession(
  */
 export async function deleteAuthCookieSession(): Promise<void> {
   "use server";
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete("access_token");
   cookieStore.delete("refresh_token");
 }

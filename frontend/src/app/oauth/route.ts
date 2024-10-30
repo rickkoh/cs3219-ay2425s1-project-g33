@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     refresh_token: refreshToken,
   });
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set("access_token", tokenPair.access_token);
   cookieStore.set("refresh_token", tokenPair.refresh_token);
 

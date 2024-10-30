@@ -10,6 +10,9 @@
 
 @layer base {
   :root {
+    --user-color: #000000;
+    --font-sans: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+      Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
     --background: #ffffff;
     --background-100: #fff6f6;
     --background-200: #ffeeee;
@@ -50,6 +53,9 @@
   }
 
   .dark {
+    --user-color: #000000;
+    --font-sans: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+      Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
     --background: #171717;
     --background-100: #404040;
     --background-200: #3c3c3c;
@@ -96,6 +102,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --user-color: #000000;
+    --font-sans: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+      Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
     --background: #171717;
     --background-100: #404040;
     --background-200: #3c3c3c;
@@ -159,4 +168,53 @@ select:-webkit-autofill:focus {
   border: 1px solid var(--input-background-100);
   -webkit-text-fill-color: var(--input-foreground);
   transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Cursor selection background */
+.yRemoteSelection {
+  opacity: 0.5;
+  background-color: var(--user-color);
+  margin-right: -1px;
+}
+
+/* Cursor caret */
+.yRemoteSelectionHead {
+  position: absolute;
+  box-sizing: border-box;
+  height: 100%;
+  border-left: 2px solid var(--user-color);
+}
+
+
+@keyframes fadeOut {
+  0% {
+      opacity: 1;
+  }
+  100% {
+      opacity: 0;
+      visibility: hidden;
+  }
+}
+
+/* Cursor name */
+.yRemoteSelectionHead::after {
+  position: absolute;
+  top: -1.4em;
+  left: -2px;
+  padding: 2px 6px;
+  background: var(--user-color);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  border-bottom-left-radius: 0;
+  line-height: normal;
+  white-space: nowrap;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1000;
+  animation: fadeOut 0.35s forwards 1s;
 }
