@@ -15,6 +15,8 @@ import {
   FindQuestionByIdDto,
   GetQuestionsDto,
   UpdateQuestionDto,
+  TestCasesDto,
+  UpdateQuestionTestCasesDto,
 } from './dto';
 import {
   ApiBadRequestResponse,
@@ -27,6 +29,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { RolesGuard } from 'src/common/guards';
 import { Role } from 'src/common/constants';
 import { Roles } from 'src/common/decorators';
+import { TestCase } from './dto/update-question-testcases-dto';
+import { plainToInstance } from 'class-transformer';
 
 @ApiTags('questions')
 @ApiBearerAuth('access-token')
@@ -99,5 +103,30 @@ export class QuestionController {
   updateQuestion(@Param('id') id: string, @Body() dto: CreateQuestionDto) {
     const payload: UpdateQuestionDto = { id, updatedQuestionInfo: dto };
     return this.questionClient.send({ cmd: 'update-question' }, payload);
+  }
+
+  // Update question test cases
+  @Patch(':id/testcases')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOkResponse({ description: 'Update question test cases successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid question test cases data' })
+  updateTestCases(@Param('id') id: string, @Body() dto: TestCasesDto) {
+    const plainTestCases = plainToInstance(TestCase, dto.testCases).map(
+      (testCase) => ({
+        input: testCase.input,
+        expectedOutput: testCase.expectedOutput,
+      }),
+    );
+
+    const payload: UpdateQuestionTestCasesDto = {
+      id,
+      testCases: plainTestCases,
+    };
+    console.log(payload);
+    return this.questionClient.send(
+      { cmd: 'update-question-testcases' },
+      payload,
+    );
   }
 }

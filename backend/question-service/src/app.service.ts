@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Question } from './schema/question.schema';
-import { CreateQuestionDto, GetQuestionsResponse } from './dto';
+import { CreateQuestionDto, GetQuestionsResponse, TestCase } from './dto';
 import { RpcException } from '@nestjs/microservices';
 import { QUESTION_CATEGORIES } from './constants/question-categories.constant';
 
@@ -40,6 +40,7 @@ export class AppService {
       questionNumber: 1,
       difficulty: 1,
       categories: 1,
+      testCases: 1,
     };
     try {
       // Get the total count of documents matching the filters

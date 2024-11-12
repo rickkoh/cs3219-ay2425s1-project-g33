@@ -2,8 +2,9 @@ import { Code, Pencil } from "lucide-react";
 import TabPanel, { Tab } from "@/app/collaboration/_components/TabPanel";
 import CollaborativeEditorTab from "./CollaborativeEditor/CollaborativeEditorTab";
 import CollaborativeWhiteboardTab from "./CollaborativeWhiteboard/CollaborativeWhiteboardTab";
+import LanguageSelector from "./CollaborativeEditor/LanguageSelector";
 
-export function CollabCodePanel({ sessionId }: { sessionId: string }) {
+export function CollabCodePanel() {
   const tabs: Tab[] =
     process.env.NEXT_PUBLIC_WHITEBOARD_FEATURE === "true"
       ? [
@@ -11,13 +12,13 @@ export function CollabCodePanel({ sessionId }: { sessionId: string }) {
             value: "code",
             label: "Code",
             Icon: Code,
-            content: <CollaborativeEditorTab sessionId={sessionId} />,
+            content: <CollaborativeEditorTab />,
           },
           {
             value: "whiteboard",
             label: "Whiteboard",
             Icon: Pencil,
-            content: <CollaborativeWhiteboardTab sessionId={sessionId} />,
+            content: <CollaborativeWhiteboardTab />,
           },
         ]
       : [
@@ -25,9 +26,15 @@ export function CollabCodePanel({ sessionId }: { sessionId: string }) {
             value: "code",
             label: "Code",
             Icon: Code,
-            content: <CollaborativeEditorTab sessionId={sessionId} />,
+            content: <CollaborativeEditorTab />,
           },
         ];
 
-  return <TabPanel tabs={tabs} defaultValue={"code"} />;
+  return (
+    <TabPanel
+      tabs={tabs}
+      defaultValue={"code"}
+      tabChildren={<LanguageSelector className="ml-auto" />}
+    />
+  );
 }

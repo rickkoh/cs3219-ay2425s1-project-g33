@@ -23,7 +23,20 @@ export const config = {
     host: getEnvVar('USER_SERVICE_HOST'),
     transport: Transport[getEnvVar('USER_SERVICE_TRANSPORT')] || Transport.TCP,
   },
+  questionService: {
+    port: parseInt(getEnvVar('QUESTION_SERVICE_PORT')),
+    host: getEnvVar('QUESTION_SERVICE_HOST'),
+    transport:
+      Transport[getEnvVar('QUESTION_SERVICE_TRANSPORT')] || Transport.TCP,
+  },
   mongo: {
     connectionString: getEnvVar('MONGO_CONNECTION_STRING'),
+  },
+  redis: {
+    host: getEnvVar('REDIS_HOST'),
+    port: parseInt(getEnvVar('REDIS_PORT')),
+  },
+  openai: {
+    apiKey: getEnvVar('OPENAI_API_KEY'),
   },
 };
