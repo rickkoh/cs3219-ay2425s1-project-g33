@@ -153,7 +153,7 @@ export class CollaborationGateway implements OnGatewayDisconnect {
     } catch (e) {
       console.log(e);
       client.emit(SESSION_ERROR, {
-        event: SESSION_JOIN,
+        event: SESSION_LEAVE,
         error: `Failed to leave session: ${e.message}`,
       });
     }
