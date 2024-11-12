@@ -179,11 +179,12 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({
     ({
       userId,
       language,
+      sessionMessages,
       sessionUserProfiles,
     }: {
       userId: string;
       language: string;
-      messages: ChatMessages;
+      sessionMessages: ChatMessages;
       sessionUserProfiles: SessionUserProfiles;
     }) => {
       console.log("sessionJoined occured");
@@ -191,11 +192,12 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({
         if (userProfile.id === userId) {
           setConnectionStatus("connected");
           const currentMessages = ChatMessagesSchema.parse(
-            messages.map((message: ChatMessage) => ({
+            sessionMessages.map((message: ChatMessage) => ({
               ...message,
               status: ChatMessageStatusEnum.enum.sent,
             }))
           );
+
           setMessages([...currentMessages]);
         }
 
@@ -207,11 +209,12 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({
         console.log(e);
       }
     },
-    [messages, userProfile.id]
+    [userProfile.id]
   );
 
   const onChatReceiveMessage = useCallback(
     (newMessage: ChatMessage) => {
+      console.log("chatReceiveMessage occured");
       try {
         newMessage["status"] = ChatMessageStatusEnum.enum.sent;
         const messageParsed = ChatMessageSchema.parse(newMessage);
@@ -375,7 +378,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({
         setConnectionStatus("failed");
       }
 
-      if (event === "chatReceiveMessage") {
+      if (event === "chatSendMessage") {
         setMessages((prev) =>
           prev.map((message) => {
             if (message.id !== data?.id) return message;

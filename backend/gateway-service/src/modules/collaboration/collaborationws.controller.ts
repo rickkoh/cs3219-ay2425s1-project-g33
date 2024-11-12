@@ -105,7 +105,7 @@ export class CollaborationGateway implements OnGatewayDisconnect {
       this.server.to(sessionId).emit(SESSION_JOINED, {
         userId, // the user who recently joined
         sessionId,
-        messages, // chat messages
+        sessionMessages: messages, // chat messages
         language: existingLanguage || 'python3', // default language
         sessionUserProfiles, // returns the all session member profiles
       });
